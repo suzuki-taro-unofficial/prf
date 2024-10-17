@@ -1,5 +1,5 @@
 #include<iostream>
-#include "hello.h"
+#include "hello.hpp"
 
 bool hello_test(){
     std::cout << "Start hello test" << std::endl;

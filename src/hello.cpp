@@ -1,4 +1,4 @@
-#include "hello.h"
+#include "hello.hpp"
 
 std::string hello(std::string msg){
     return "Hello, " + msg + "!";
