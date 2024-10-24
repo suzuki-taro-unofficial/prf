@@ -9,6 +9,8 @@ namespace prf {
 class Node {
 private:
   // 所属しているクラスタのID
+  // ビルド時にクラスタIDを再度割り当てる
+  // 同じクラスタIDであっても連結成分でない場合は異なるクラスタIDになる
   ID cluster_id;
 
   // クラスター内の優先順位
@@ -24,7 +26,7 @@ public:
 
   ID get_cluster_id();
   void set_cluster_id(ID);
-  Rank get_in_cluster_rank();
+  Rank &get_in_cluster_rank();
 
   const std::vector<Node *> &get_parents();
   const std::vector<Node *> &get_childs();
@@ -43,6 +45,10 @@ private:
 
   // 依存関係に基づいてクラスタの再割り当てを行なう
   void split_cluster_by_dependence();
+  // クラスタにランクを割り当てる
+  void generate_cluster_ranks();
+  // クラスタ内のランクを割り当てる
+  void generate_in_cluster_ranks();
 
 public:
   NodeManager();

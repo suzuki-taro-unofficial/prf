@@ -12,7 +12,7 @@ Node::Node(ID cluster_id) : cluster_id(cluster_id) {}
 
 ID Node::get_cluster_id() { return cluster_id; }
 void Node::set_cluster_id(ID id) { cluster_id = id; };
-Rank Node::get_in_cluster_rank() { return in_cluster_rank; }
+Rank &Node::get_in_cluster_rank() { return in_cluster_rank; }
 
 const std::vector<Node *> &Node::get_parents() { return parents; }
 const std::vector<Node *> &Node::get_childs() { return childs; }
@@ -76,12 +76,7 @@ void NodeManager::split_cluster_by_dependence() {
   }
 }
 
-void NodeManager::build() {
-  assert(not already_build && "ビルドは一度まで");
-  already_build = true;
-
-  split_cluster_by_dependence();
-
+void NodeManager::generate_cluster_ranks() {
   ID max_id = 0;
   for (const auto node : nodes) {
     max_id = std::max(max_id, node->get_cluster_id());
@@ -124,6 +119,77 @@ void NodeManager::build() {
       }
     }
   }
+}
+
+void NodeManager::generate_in_cluster_ranks() {
+  std::map<Node *, u64> node_to_u64;
+  std::map<u64, Node *> u64_to_node;
+  for (Node *node : nodes) {
+    node_to_u64[node] = 0;
+  }
+  u64 current_node_id = 0;
+  for (auto &i : node_to_u64) {
+    i.second = current_node_id;
+    ++current_node_id;
+  }
+
+  for (const auto i : node_to_u64) {
+    u64_to_node[i.second] = i.first;
+  }
+
+  std::vector<std::set<u64>> parents(current_node_id);
+  std::vector<std::set<u64>> childs(current_node_id);
+
+  for (Node *parent : nodes) {
+    for (Node *child : parent->get_childs()) {
+      // クラスタIDが異なる場合は連結でないとみなす
+      if (parent->get_cluster_id() != child->get_cluster_id()) {
+        continue;
+      }
+
+      u64 parent_id = node_to_u64[parent];
+      u64 child_id = node_to_u64[child];
+
+      childs[parent_id].insert(child_id);
+      parents[child_id].insert(parent_id);
+    }
+  }
+
+  std::vector<u64> updates;
+  for (Node *node : nodes) {
+    u64 node_id = node_to_u64[node];
+    if (parents[node_id].empty()) {
+      updates.push_back(node_id);
+    }
+  }
+
+  while (not updates.empty()) {
+    u64 updating_id = updates.back();
+    updates.pop_back();
+
+    for (u64 child_id : childs[updating_id]) {
+      Node *updating_node = u64_to_node[updating_id];
+      Node *child_node = u64_to_node[child_id];
+      updating_node->get_in_cluster_rank().ensure_after(
+          child_node->get_in_cluster_rank());
+    }
+
+    for (u64 child_id : childs[updating_id]) {
+      parents[child_id].erase(updating_id);
+      if (parents[child_id].empty()) {
+        updates.push_back(child_id);
+      }
+    }
+  }
+}
+
+void NodeManager::build() {
+  assert(not already_build && "ビルドは一度まで");
+  already_build = true;
+
+  split_cluster_by_dependence();
+  generate_cluster_ranks();
+  generate_in_cluster_ranks();
 }
 
 const std::vector<Rank> &NodeManager::get_cluster_ranks() {
