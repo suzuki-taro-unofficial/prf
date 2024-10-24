@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
-add_executable(hello_test hello_test.cpp)
+add_executable(rank_test rank_test.cpp)
+target_link_libraries(rank_test prf)
+add_test(run_rank_test rank_test)
 
-target_link_libraries(hello_test hello)
-
-add_test(NAME run_test COMMAND hello_test)
+add_executable(node_test node_test.cpp)
+target_link_libraries(node_test prf)
+add_test(run_node_test node_test)
