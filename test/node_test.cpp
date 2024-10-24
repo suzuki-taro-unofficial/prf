@@ -2,7 +2,6 @@
 #include "rank.hpp"
 
 #include <cassert>
-#include <iostream>
 
 void build_test1() {
   prf::NodeManager nodeManager;
