@@ -130,35 +130,4 @@ const std::vector<Rank> &NodeManager::get_cluster_ranks() {
   assert(already_build && "クラスタのランクを知るにはビルドをしてください");
   return cluster_ranks;
 }
-
-// ClusterManager
-u64 ClusterManager::global_current_id = 0;
-u64 ClusterManager::current_clusters = 0;
-
-u64 ClusterManager::next_id() {
-  ClusterManager::global_current_id += 1;
-  return ClusterManager::global_current_id;
-}
-
-u64 ClusterManager::current_id() { return ClusterManager::global_current_id; }
-
-bool ClusterManager::is_in_cluster() {
-  return ClusterManager::current_clusters > 0;
-}
-
-void ClusterManager::enter_cluster() { ++ClusterManager::current_clusters; }
-
-void ClusterManager::exit_cluster() { --ClusterManager::current_clusters; }
-ClusterManager clusterManager = ClusterManager();
-
-// class Cluster
-Cluster::Cluster() {
-  clusterManager.next_id();
-  clusterManager.enter_cluster();
-}
-Cluster::~Cluster() {
-  clusterManager.next_id();
-  clusterManager.exit_cluster();
-}
-
 }; // namespace prf

@@ -4,6 +4,10 @@ add_library(prf_union_find STATIC union_find.cpp)
 target_include_directories(prf_union_find PUBLIC ./)
 target_precompile_headers(prf_union_find PRIVATE union_find.hpp)
 
+add_library(prf_cluster STATIC cluster.cpp)
+target_include_directories(prf_cluster PUBLIC ./)
+target_precompile_headers(prf_cluster PRIVATE cluster.hpp)
+
 add_library(prf_node STATIC node.cpp)
 target_include_directories(prf_node PUBLIC ./)
 target_precompile_headers(prf_node PRIVATE node.hpp)
