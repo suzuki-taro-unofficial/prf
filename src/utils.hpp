@@ -4,7 +4,7 @@
 
 namespace prf {
 // 値の列に対して0を含む異なる自然数を適当に振り分ける
-// 振り分けられる自然数+1は返り値のmapの要素数と一致する
+// 振り分けられる自然数の最大+1は返り値のmapの要素数と一致する
 template <class T>
 auto numbering(T xs)
     -> std::map<typename std::remove_reference<decltype(*xs.begin())>::type,
