@@ -1,5 +1,6 @@
 #include "node.hpp"
 #include "union_find.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cassert>
 #include <map>
@@ -28,18 +29,10 @@ NodeManager::NodeManager() : nodes(), cluster_ranks(), already_build(false) {}
 void NodeManager::register_node(Node *node) { nodes.push_back(node); }
 
 void NodeManager::split_cluster_by_dependence() {
-  std::map<Node *, u64> node2u64;
+  std::map<Node *, u64> node2u64 = numbering(nodes);
+  ID max_id = node2u64.size();
 
-  for (Node *node : nodes) {
-    node2u64[node] = 0;
-  }
-  u64 id = 0;
-  for (auto &i : node2u64) {
-    i.second = id;
-    ++id;
-  }
-
-  UnionFind uf(id);
+  UnionFind uf(max_id);
 
   for (Node *parent : nodes) {
     u64 parent_cluster_id = parent->get_cluster_id();
@@ -54,20 +47,12 @@ void NodeManager::split_cluster_by_dependence() {
     }
   }
 
-  std::map<u64, u64> unionfind_id2cluster_id;
-
-  for (Node *node : nodes) {
-    u64 unionfind_id = uf.get_parent(node2u64[node]);
-    unionfind_id2cluster_id[unionfind_id] = 0;
+  std::vector<u64> unionfind_ids;
+  for (auto i : node2u64) {
+    unionfind_ids.push_back(i.second);
   }
 
-  {
-    u64 cluster_id = 0;
-    for (auto &i : unionfind_id2cluster_id) {
-      i.second = cluster_id;
-      ++cluster_id;
-    }
-  }
+  std::map<u64, u64> unionfind_id2cluster_id = numbering(unionfind_ids);
 
   for (Node *node : nodes) {
     u64 unionfind_id = uf.get_parent(node2u64[node]);
@@ -122,23 +107,15 @@ void NodeManager::generate_cluster_ranks() {
 }
 
 void NodeManager::generate_in_cluster_ranks() {
-  std::map<Node *, u64> node_to_u64;
+  std::map<Node *, u64> node_to_u64 = numbering(nodes);
   std::map<u64, Node *> u64_to_node;
-  for (Node *node : nodes) {
-    node_to_u64[node] = 0;
-  }
-  u64 current_node_id = 0;
-  for (auto &i : node_to_u64) {
-    i.second = current_node_id;
-    ++current_node_id;
-  }
 
   for (const auto i : node_to_u64) {
     u64_to_node[i.second] = i.first;
   }
 
-  std::vector<std::set<u64>> parents(current_node_id);
-  std::vector<std::set<u64>> childs(current_node_id);
+  std::vector<std::set<u64>> parents(nodes.size());
+  std::vector<std::set<u64>> childs(nodes.size());
 
   for (Node *parent : nodes) {
     for (Node *child : parent->get_childs()) {

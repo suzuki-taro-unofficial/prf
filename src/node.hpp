@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rank.hpp"
+#include "types.hpp"
 #include <vector>
 
 namespace prf {
