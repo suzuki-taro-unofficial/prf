@@ -64,7 +64,7 @@ void NodeManager::split_cluster_by_associates() {
 
   std::vector<u64> unionfind_ids;
   for (auto i : node2u64) {
-    unionfind_ids.push_back(i.second);
+    unionfind_ids.push_back(uf.get_parent(i.second));
   }
 
   std::map<u64, u64> unionfind_id2cluster_id = numbering(unionfind_ids);
