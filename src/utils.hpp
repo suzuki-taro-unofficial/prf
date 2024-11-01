@@ -21,4 +21,13 @@ auto numbering(T xs)
   }
   return numbered;
 }
+
+// mapのキーとバリューを入れ替える
+template <class T, class U> std::map<U, T> transpose(std::map<T, U> m) {
+  std::map<U, T> res;
+  for (auto i : m) {
+    res[i.second] = i.first;
+  }
+  return res;
+}
 } // namespace prf

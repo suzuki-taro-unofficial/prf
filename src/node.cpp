@@ -108,11 +108,7 @@ void NodeManager::generate_cluster_ranks() {
 
 void NodeManager::generate_in_cluster_ranks() {
   std::map<Node *, u64> node_to_u64 = numbering(nodes);
-  std::map<u64, Node *> u64_to_node;
-
-  for (const auto i : node_to_u64) {
-    u64_to_node[i.second] = i.first;
-  }
+  std::map<u64, Node *> u64_to_node = transpose(node_to_u64);
 
   std::vector<std::set<u64>> parents(nodes.size());
   std::vector<std::set<u64>> childs(nodes.size());
