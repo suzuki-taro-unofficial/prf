@@ -21,9 +21,9 @@ private:
   std::vector<Node *> parents;
   // このノードに依存しているノード
   std::vector<Node *> childs;
-  // このノードに関係のあるノード
-  // Loopなどは依存の向きが無いのでここだけに入る
-  std::vector<Node *> associates;
+  // このノードと同一クラスタに属するノード
+  // Loopなどの依存関係は無いが同一クラスタに属するべきものを入れる
+  std::vector<Node *> same_clusters;
 
 public:
   Node(ID);
@@ -34,13 +34,13 @@ public:
 
   const std::vector<Node *> &get_parents();
   const std::vector<Node *> &get_childs();
-  const std::vector<Node *> &get_associates();
+  const std::vector<Node *> &get_same_clusters();
 
   // 別のノードを子ノードとする
   void link_to(Node *);
 
   // 別のノードと関係付けをする
-  void associate_to(Node *);
+  void same_cluster_to(Node *);
 };
 
 // ノードを管理するクラス

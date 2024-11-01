@@ -17,18 +17,18 @@ Rank &Node::get_in_cluster_rank() { return in_cluster_rank; }
 
 const std::vector<Node *> &Node::get_parents() { return parents; }
 const std::vector<Node *> &Node::get_childs() { return childs; }
-const std::vector<Node *> &Node::get_associates() { return associates; }
+const std::vector<Node *> &Node::get_same_clusters() { return same_clusters; }
 
 void Node::link_to(Node *other) {
   childs.push_back(other);
   other->parents.push_back(this);
-
-  this->associate_to(other);
 }
 
-void Node::associate_to(Node *other) {
-  associates.push_back(other);
-  other->associates.push_back(this);
+void Node::same_cluster_to(Node *other) {
+  assert(this->get_cluster_id() == other->get_cluster_id() &&
+         "異なるクラスタに属するものを同一クラスタにすることはできません");
+  same_clusters.push_back(other);
+  other->same_clusters.push_back(this);
 }
 
 // NodeManager
@@ -42,16 +42,23 @@ void NodeManager::split_cluster_by_associates() {
 
   UnionFind uf(max_id);
 
-  for (Node *associate_from : nodes) {
-    u64 from_id = associate_from->get_cluster_id();
-    for (Node *associate_to : associate_from->get_associates()) {
-      u64 to_id = associate_to->get_cluster_id();
-      // クラスタを明示的に切っているなら、そこでは依存が生まれない。
-      if (from_id != to_id) {
+  for (Node *parent : nodes) {
+    u64 parent_id = parent->get_cluster_id();
+    for (Node *child : parent->get_childs()) {
+      u64 child_id = child->get_cluster_id();
+      // クラスタが明示的に切られているなら、そこでは関係が生まれない。
+      if (parent_id != child_id) {
         continue;
       }
+      uf.merge(node2u64[parent], node2u64[child]);
+    }
+  }
 
-      uf.merge(node2u64[associate_from], node2u64[associate_to]);
+  for (Node *same_cluster_1 : nodes) {
+    u64 id_1 = same_cluster_1->get_cluster_id();
+    for (Node *same_cluster_2 : same_cluster_1->get_same_clusters()) {
+      u64 id_2 = same_cluster_2->get_cluster_id();
+      uf.merge(node2u64[same_cluster_1], node2u64[same_cluster_2]);
     }
   }
 
