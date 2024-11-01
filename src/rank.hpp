@@ -2,8 +2,8 @@
 
 #include "types.hpp"
 
-// 依存関係に割り当てる値
 namespace prf {
+// 依存関係に割り当てる値
 class Rank {
 public:
   u64 value;
