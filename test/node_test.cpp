@@ -199,6 +199,28 @@ void build_test9() {
          "理される");
 }
 
+void build_test10() {
+  prf::NodeManager nodeManager;
+  prf::Node node1(0);
+  prf::Node node2(0);
+  prf::Node node3(0);
+  prf::Node node4(0);
+  prf::Node node5(0);
+
+  node1.same_cluster_to(&node2);
+
+  node3.same_cluster_to(&node4);
+  node4.same_cluster_to(&node5);
+
+  nodeManager.build();
+
+  assert(node1.get_cluster_id() == node2.get_cluster_id() &&
+         "同じクラスタに属すると明示したものはビルド後に同一クラスタに属する");
+
+  assert(node3.get_cluster_id() == node5.get_cluster_id() &&
+         "同じクラスタに属すると明示したものはビルド後に同一クラスタに属する");
+}
+
 int main() {
   build_test1();
   build_test2();
@@ -209,4 +231,5 @@ int main() {
   build_test7();
   build_test8();
   build_test9();
+  build_test10();
 }
