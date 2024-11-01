@@ -21,6 +21,9 @@ private:
   std::vector<Node *> parents;
   // このノードに依存しているノード
   std::vector<Node *> childs;
+  // このノードに関係のあるノード
+  // Loopなどは依存の向きが無いのでここだけに入る
+  std::vector<Node *> associates;
 
 public:
   Node(ID);
@@ -31,9 +34,13 @@ public:
 
   const std::vector<Node *> &get_parents();
   const std::vector<Node *> &get_childs();
+  const std::vector<Node *> &get_associates();
 
   // 別のノードを子ノードとする
   void link_to(Node *);
+
+  // 別のノードと関係付けをする
+  void associate_to(Node *);
 };
 
 // ノードを管理するクラス
@@ -44,8 +51,8 @@ private:
   std::vector<Rank> cluster_ranks;
   bool already_build;
 
-  // 依存関係に基づいてクラスタの再割り当てを行なう
-  void split_cluster_by_dependence();
+  // ノード間の関係性に基づいてクラスタの再割り当てを行なう
+  void split_cluster_by_associates();
   // クラスタにランクを割り当てる
   void generate_cluster_ranks();
   // クラスタ内のランクを割り当てる

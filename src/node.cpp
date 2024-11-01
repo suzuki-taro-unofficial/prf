@@ -17,10 +17,18 @@ Rank &Node::get_in_cluster_rank() { return in_cluster_rank; }
 
 const std::vector<Node *> &Node::get_parents() { return parents; }
 const std::vector<Node *> &Node::get_childs() { return childs; }
+const std::vector<Node *> &Node::get_associates() { return associates; }
 
 void Node::link_to(Node *other) {
   childs.push_back(other);
   other->parents.push_back(this);
+
+  this->associate_to(other);
+}
+
+void Node::associate_to(Node *other) {
+  associates.push_back(other);
+  other->associates.push_back(this);
 }
 
 // NodeManager
@@ -28,22 +36,22 @@ NodeManager::NodeManager() : nodes(), cluster_ranks(), already_build(false) {}
 
 void NodeManager::register_node(Node *node) { nodes.push_back(node); }
 
-void NodeManager::split_cluster_by_dependence() {
+void NodeManager::split_cluster_by_associates() {
   std::map<Node *, u64> node2u64 = numbering(nodes);
   ID max_id = node2u64.size();
 
   UnionFind uf(max_id);
 
-  for (Node *parent : nodes) {
-    u64 parent_cluster_id = parent->get_cluster_id();
-    for (Node *child : parent->get_childs()) {
-      u64 child_cluster_id = child->get_cluster_id();
+  for (Node *associate_from : nodes) {
+    u64 from_id = associate_from->get_cluster_id();
+    for (Node *associate_to : associate_from->get_associates()) {
+      u64 to_id = associate_to->get_cluster_id();
       // クラスタを明示的に切っているなら、そこでは依存が生まれない。
-      if (parent_cluster_id != child_cluster_id) {
+      if (from_id != to_id) {
         continue;
       }
 
-      uf.merge(node2u64[parent], node2u64[child]);
+      uf.merge(node2u64[associate_from], node2u64[associate_to]);
     }
   }
 
@@ -160,7 +168,7 @@ void NodeManager::build() {
   assert(not already_build && "ビルドは一度まで");
   already_build = true;
 
-  split_cluster_by_dependence();
+  split_cluster_by_associates();
   generate_cluster_ranks();
   generate_in_cluster_ranks();
 }
