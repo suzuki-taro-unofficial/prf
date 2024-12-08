@@ -17,6 +17,11 @@ add_library(prf_rank STATIC rank.cpp)
 target_include_directories(prf_rank PUBLIC ./)
 target_precompile_headers(prf_rank PRIVATE rank.hpp)
 
+add_library(prf_time_invariant_values STATIC time_invariant_values.cpp)
+target_include_directories(prf_time_invariant_values PUBLIC ./)
+target_precompile_headers(prf_time_invariant_values PRIVATE time_invariant_values.hpp)
+target_link_libraries(prf_time_invariant_values prf_node)
+
 add_library(prf STATIC prf.cpp)
 target_include_directories(prf PUBLIC ./)
 target_precompile_headers(prf PRIVATE prf.hpp)
