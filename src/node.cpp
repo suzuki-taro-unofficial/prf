@@ -15,20 +15,18 @@ ID Node::get_cluster_id() { return cluster_id; }
 void Node::set_cluster_id(ID id) { cluster_id = id; };
 Rank &Node::get_in_cluster_rank() { return in_cluster_rank; }
 
-const std::vector<Node *> &Node::get_parents() { return parents; }
 const std::vector<Node *> &Node::get_childs() { return childs; }
 const std::vector<Node *> &Node::get_same_clusters() { return same_clusters; }
+const std::vector<Node *> &Node::get_loop_childs() { return loop_childs; }
 
-void Node::link_to(Node *other) {
-  childs.push_back(other);
-  other->parents.push_back(this);
-}
+void Node::link_to(Node *other) { childs.push_back(other); }
 
-void Node::same_cluster_to(Node *other) {
+void Node::loop_child_to(Node *other) {
   assert(this->get_cluster_id() == other->get_cluster_id() &&
-         "異なるクラスタに属するものを同一クラスタにすることはできません");
+         "クラスタを跨いでループを作ることはできません");
   same_clusters.push_back(other);
   other->same_clusters.push_back(this);
+  loop_childs.push_back(other);
 }
 
 // NodeManager
@@ -89,10 +87,10 @@ void NodeManager::generate_cluster_ranks() {
 
   for (const auto node : nodes) {
     const ID this_id = node->get_cluster_id();
-    for (const auto parent : node->get_parents()) {
-      const ID parent_id = parent->get_cluster_id();
-      cluster_childs[parent_id].insert(this_id);
-      cluster_parents[this_id].insert(parent_id);
+    for (const auto child : node->get_childs()) {
+      const ID child_id = child->get_cluster_id();
+      cluster_parents[child_id].insert(this_id);
+      cluster_childs[this_id].insert(child_id);
     }
   }
 

@@ -207,18 +207,18 @@ void build_test10() {
   prf::Node node4(0);
   prf::Node node5(0);
 
-  node1.same_cluster_to(&node2);
+  node1.loop_child_to(&node2);
 
-  node3.same_cluster_to(&node4);
-  node4.same_cluster_to(&node5);
+  node3.loop_child_to(&node4);
+  node4.loop_child_to(&node5);
 
   nodeManager.build();
 
   assert(node1.get_cluster_id() == node2.get_cluster_id() &&
-         "同じクラスタに属すると明示したものはビルド後に同一クラスタに属する");
+         "Loopを利用すると必ず同じクラスタに属する");
 
   assert(node3.get_cluster_id() == node5.get_cluster_id() &&
-         "同じクラスタに属すると明示したものはビルド後に同一クラスタに属する");
+         "Loopを利用すると必ず同じクラスタに属する");
 }
 
 int main() {

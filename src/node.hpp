@@ -17,10 +17,11 @@ private:
   // クラスター内の優先順位
   Rank in_cluster_rank;
 
-  // このノードが依存しているノード
-  std::vector<Node *> parents;
   // このノードに依存しているノード
   std::vector<Node *> childs;
+
+  // このノードにLoopで依存しているノード
+  std::vector<Node *> loop_childs;
   // このノードと同一クラスタに属するノード
   // Loopなどの依存関係は無いが同一クラスタに属するべきものを入れる
   std::vector<Node *> same_clusters;
@@ -32,15 +33,15 @@ public:
   void set_cluster_id(ID);
   Rank &get_in_cluster_rank();
 
-  const std::vector<Node *> &get_parents();
   const std::vector<Node *> &get_childs();
+  const std::vector<Node *> &get_loop_childs();
   const std::vector<Node *> &get_same_clusters();
 
   // 別のノードを子ノードとする
   void link_to(Node *);
 
-  // 別のノードと関係付けをする
-  void same_cluster_to(Node *);
+  // 別のノードをLoopでの子ノードとする
+  void loop_child_to(Node *);
 };
 
 // ノードを管理するクラス
