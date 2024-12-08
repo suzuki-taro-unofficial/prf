@@ -6,31 +6,33 @@
 void build_test1() {
   prf::NodeManager nodeManager;
 
-  prf::Node node1(0);
-  prf::Node node2(0);
+  prf::Node A(0);
+  prf::Node B(0);
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
 
   nodeManager.build();
 
-  assert(node1.get_cluster_id() != node2.get_cluster_id() &&
+  assert(A.get_cluster_id() != B.get_cluster_id() &&
          "依存関係の無いノードはビルド時に別クラスタへ再割り当てされる");
 }
 
 void build_test2() {
   prf::NodeManager nodeManager;
-  prf::Node node1(0);
-  prf::Node node2(1);
+  prf::Node A(0);
+  prf::Node B(1);
 
-  node1.link_to(&node2);
+  // A -(cluster)-> B;
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
+  A.link_to(&B);
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
 
   nodeManager.build();
 
-  assert(node1.get_cluster_id() != node2.get_cluster_id() &&
+  assert(A.get_cluster_id() != B.get_cluster_id() &&
          "依存関係の有るノードでもクラスタが異なればビルド後も異なるクラスタに"
          "割り当てられる");
 }
@@ -38,186 +40,207 @@ void build_test2() {
 void build_test3() {
   prf::NodeManager nodeManager;
 
-  prf::Node node1(0);
-  prf::Node node2(1);
-  prf::Node node3(2);
+  prf::Node A(0);
+  prf::Node B(1);
+  prf::Node C(2);
 
-  node1.link_to(&node2);
-  node2.link_to(&node3);
+  A.link_to(&B);
+  B.link_to(&C);
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
-  nodeManager.register_node(&node3);
+  // A -(cluster)-> B -(cluster)-> C
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
 
   nodeManager.build();
 
   const auto ranks = nodeManager.get_cluster_ranks();
 
-  assert(ranks[node1.get_cluster_id()] < ranks[node2.get_cluster_id()] &&
-         "親は子よりもランクの値が小さい");
-  assert(ranks[node2.get_cluster_id()] < ranks[node3.get_cluster_id()] &&
-         "親は子よりもランクの値が小さい");
+  assert(ranks[A.get_cluster_id()] < ranks[B.get_cluster_id()] &&
+         "親クラスタは子クラスタよりもランクの値が小さい");
+  assert(ranks[B.get_cluster_id()] < ranks[C.get_cluster_id()] &&
+         "親クラスタは子クラスタよりもランクの値が小さい");
 }
 
 void build_test4() {
   prf::NodeManager nodeManager;
 
-  prf::Node node1(0);
-  prf::Node node2(1);
-  prf::Node node3(1);
-  prf::Node node4(2);
+  prf::Node A(0);
+  prf::Node B(1);
+  prf::Node C(1);
+  prf::Node D(2);
 
-  node1.link_to(&node2);
-  node1.link_to(&node3);
-  node2.link_to(&node4);
-  node3.link_to(&node4);
+  // A -(cluster)-> B -(cluster)-> D
+  // A -(cluster)-> C -(cluster)-> D
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
-  nodeManager.register_node(&node3);
-  nodeManager.register_node(&node4);
+  A.link_to(&B);
+  A.link_to(&C);
+  B.link_to(&D);
+  C.link_to(&D);
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
+  nodeManager.register_node(&D);
 
   nodeManager.build();
 
-  assert(node2.get_cluster_id() != node3.get_cluster_id() &&
+  assert(B.get_cluster_id() != C.get_cluster_id() &&
          "依存関係の無いノードはビルド時に別クラスタへ再割り当てされる");
 }
 
 void build_test5() {
   prf::NodeManager nodeManager;
 
-  prf::Node node1(0);
-  prf::Node node2(0);
-  prf::Node node3(0);
+  prf::Node A(0);
+  prf::Node B(0);
+  prf::Node C(0);
 
-  node1.link_to(&node3);
-  node2.link_to(&node3);
+  // A -> C
+  // B -> C
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
-  nodeManager.register_node(&node3);
+  A.link_to(&C);
+  B.link_to(&C);
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
 
   nodeManager.build();
 
-  assert(node1.get_cluster_id() == node2.get_cluster_id() &&
+  assert(A.get_cluster_id() == B.get_cluster_id() &&
          "連結の判定は依存関係の向きに関わらず行なわれる");
 }
 
 void build_test6() {
   prf::NodeManager nodeManager;
-  prf::Node node1(0);
-  prf::Node node2(0);
-  prf::Node node3(0);
+  prf::Node A(0);
+  prf::Node B(0);
+  prf::Node C(0);
 
-  node1.link_to(&node2);
-  node2.link_to(&node3);
+  // A -> B -> C
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
-  nodeManager.register_node(&node3);
+  A.link_to(&B);
+  B.link_to(&C);
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
 
   nodeManager.build();
 
-  assert(node1.get_in_cluster_rank() == prf::Rank(0) &&
+  assert(A.get_in_cluster_rank() == prf::Rank(0) &&
          "誰にも依存していないノードのランクは0");
-  assert(node2.get_in_cluster_rank() == prf::Rank(1) &&
+  assert(B.get_in_cluster_rank() == prf::Rank(1) &&
          "ランク0のノードにだけ依存しているノードのランクは1");
-  assert(node3.get_in_cluster_rank() == prf::Rank(2) &&
+  assert(C.get_in_cluster_rank() == prf::Rank(2) &&
          "ランク1のノードにだけ依存しているノードのランクは2");
-  assert(node1.get_in_cluster_rank() < node2.get_in_cluster_rank() &&
+  assert(A.get_in_cluster_rank() < B.get_in_cluster_rank() &&
          "依存関係に基づいてランクが昇順になるように割り当てられる");
-  assert(node2.get_in_cluster_rank() < node3.get_in_cluster_rank() &&
+  assert(B.get_in_cluster_rank() < C.get_in_cluster_rank() &&
          "依存関係に基づいてランクが昇順になるように割り当てられる");
 }
 
 void build_test7() {
   prf::NodeManager nodeManager;
-  prf::Node node1(0);
-  prf::Node node2(0);
-  prf::Node node3(0);
-  prf::Node node4(0);
+  prf::Node A(0);
+  prf::Node B(0);
+  prf::Node C(0);
+  prf::Node D(0);
 
-  node1.link_to(&node2);
-  node1.link_to(&node3);
-  node2.link_to(&node4);
-  node3.link_to(&node4);
+  // A -> B -> D
+  // A -> C -> D
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
-  nodeManager.register_node(&node3);
-  nodeManager.register_node(&node4);
+  A.link_to(&B);
+  A.link_to(&C);
+  B.link_to(&D);
+  C.link_to(&D);
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
+  nodeManager.register_node(&D);
 
   nodeManager.build();
 
-  assert(node1.get_in_cluster_rank() == prf::Rank(0) &&
+  assert(A.get_in_cluster_rank() == prf::Rank(0) &&
          "誰にも依存していないノードのランクは0");
-  assert(node2.get_in_cluster_rank() == prf::Rank(1) &&
+  assert(B.get_in_cluster_rank() == prf::Rank(1) &&
          "ランク0のノードにだけ依存しているノードのランクは1");
-  assert(node3.get_in_cluster_rank() == prf::Rank(1) &&
+  assert(C.get_in_cluster_rank() == prf::Rank(1) &&
          "ランク0のノードにだけ依存しているノードのランクは1");
-  assert(node4.get_in_cluster_rank() == prf::Rank(2) &&
+  assert(D.get_in_cluster_rank() == prf::Rank(2) &&
          "ランク1のノードにだけ依存しているノードのランクは2");
 }
 
 void build_test8() {
   prf::NodeManager nodeManager;
-  prf::Node node1(0);
-  prf::Node node2(0);
-  prf::Node node3(0);
+  prf::Node A(0);
+  prf::Node B(0);
+  prf::Node C(0);
 
-  node1.link_to(&node2);
-  node1.link_to(&node3);
-  node2.link_to(&node3);
+  // A -> B -> C
+  // A -> C
 
-  nodeManager.register_node(&node1);
-  nodeManager.register_node(&node2);
-  nodeManager.register_node(&node3);
+  A.link_to(&B);
+  A.link_to(&C);
+  B.link_to(&C);
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
 
   nodeManager.build();
 
-  assert(node1.get_in_cluster_rank() == prf::Rank(0) &&
+  assert(A.get_in_cluster_rank() == prf::Rank(0) &&
          "誰にも依存していないノードのランクは0");
-  assert(node2.get_in_cluster_rank() == prf::Rank(1) &&
+  assert(B.get_in_cluster_rank() == prf::Rank(1) &&
          "ランク0のノードにだけ依存しているノードのランクは1");
-  assert(node3.get_in_cluster_rank() == prf::Rank(2) &&
+  assert(C.get_in_cluster_rank() == prf::Rank(2) &&
          "ランク0と1のノードにだけ依存しているノードのランクは2");
 }
 
 void build_test9() {
   prf::NodeManager nodeManager;
-  prf::Node node1(0);
-  prf::Node node2(1);
+  prf::Node A(0);
+  prf::Node B(1);
 
-  node1.link_to(&node2);
+  // A -(cluster)-> B
+
+  A.link_to(&B);
 
   nodeManager.build();
 
-  assert(node1.get_in_cluster_rank() == prf::Rank(0) &&
+  assert(A.get_in_cluster_rank() == prf::Rank(0) &&
          "誰にも依存していないノードのランクは0");
-  assert(node2.get_in_cluster_rank() == prf::Rank(0) &&
+  assert(B.get_in_cluster_rank() == prf::Rank(0) &&
          "依存しているノードが異なるクラスタである場合は依存関係が無いとして処"
          "理される");
 }
 
 void build_test10() {
   prf::NodeManager nodeManager;
-  prf::Node node1(0);
-  prf::Node node2(0);
-  prf::Node node3(0);
-  prf::Node node4(0);
-  prf::Node node5(0);
+  prf::Node A(0);
+  prf::Node B(0);
+  prf::Node C(0);
+  prf::Node D(0);
+  prf::Node E(0);
 
-  node1.loop_child_to(&node2);
+  // A -(loop)-> B
+  // C -(loop)-> D -(loop)-> E
 
-  node3.loop_child_to(&node4);
-  node4.loop_child_to(&node5);
+  A.loop_child_to(&B);
+
+  C.loop_child_to(&D);
+  D.loop_child_to(&E);
 
   nodeManager.build();
 
-  assert(node1.get_cluster_id() == node2.get_cluster_id() &&
+  assert(A.get_cluster_id() == B.get_cluster_id() &&
          "Loopを利用すると必ず同じクラスタに属する");
 
-  assert(node3.get_cluster_id() == node5.get_cluster_id() &&
+  assert(C.get_cluster_id() == E.get_cluster_id() &&
          "Loopを利用すると必ず同じクラスタに属する");
 }
 
