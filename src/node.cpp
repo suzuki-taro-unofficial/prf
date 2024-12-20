@@ -9,11 +9,14 @@
 
 namespace prf {
 // Node
-Node::Node(ID cluster_id) : cluster_id(cluster_id) {}
+Node::Node(ID cluster_id) : cluster_id(cluster_id) {
+  node_id = next_node_id.fetch_add(1);
+}
 
 ID Node::get_cluster_id() { return cluster_id; }
 void Node::set_cluster_id(ID id) { cluster_id = id; };
 Rank &Node::get_in_cluster_rank() { return in_cluster_rank; }
+ID Node::get_node_id() { return node_id; }
 
 const std::vector<Node *> &Node::get_childs() { return childs; }
 const std::vector<Node *> &Node::get_same_clusters() { return same_clusters; }
@@ -28,6 +31,8 @@ void Node::loop_child_to(Node *other) {
   other->same_clusters.push_back(this);
   loop_childs.push_back(other);
 }
+
+std::atomic_ulong next_node_id(0);
 
 // NodeManager
 NodeManager::NodeManager() : nodes(), cluster_ranks(), already_build(false) {}

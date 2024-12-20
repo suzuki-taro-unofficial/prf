@@ -1,7 +1,30 @@
 #include "time_invariant_values.hpp"
+#include "transaction.hpp"
 
 namespace prf {
+
+void TimeInvariantValues::register_listerns_update(Transaction *transaction) {
+  for (auto tiv : this->listners) {
+    transaction->register_update(tiv);
+  }
+}
+
+TimeInvariantValues::TimeInvariantValues(ID cluster_id)
+    : node(new Node(cluster_id)) {}
+
 void TimeInvariantValues::update(ID transaction_id) {}
 
 void TimeInvariantValues::refresh(ID transaction_id) {}
+
+ID TimeInvariantValues::get_cluster_id() { return node->get_cluster_id(); }
+
+void TimeInvariantValues::listen(TimeInvariantValues *to) {
+  to->node->link_to(this->node);
+  to->listners.push_back(this);
+}
+
+void TimeInvariantValues::listen_over_loop(TimeInvariantValues *to) {
+  to->node->loop_child_to(this->node);
+  to->listners.push_back(this);
+}
 } // namespace prf
