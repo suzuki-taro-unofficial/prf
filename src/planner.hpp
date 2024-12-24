@@ -3,6 +3,7 @@
 #include "executor.hpp"
 #include "rank.hpp"
 #include "types.hpp"
+#include <atomic>
 #include <deque>
 #include <map>
 #include <set>
@@ -96,12 +97,23 @@ using PlannerMessage =
 class Planner {
 private:
   /**
+   * このPlannerのインスタンスを参照している箇所の個数
+   */
+  std::atomic_int references;
+
+  std::thread current_thread;
+
+  /**
+   * planning()が終了したときの後処理をする
+   */
+  void finalize_planning();
+
+protected:
+  /**
    * 現在の実行計画を止めるべきか
    * このフラグがtrueであることがplanning()の中で分かった場合、自分自身をdeleteして終了する必要がある
    */
   volatile bool stop;
-
-  std::thread current_thread;
 
   /**
    * それぞれクラスタのランクとトランザクションの状態
@@ -116,6 +128,11 @@ private:
    */
   ConcurrentQueue<ExecutorMessage> &executor_message_queue;
 
+  /**
+   * 現在の情報から実行計画を建てる
+   */
+  virtual void planning();
+
 public:
   Planner(std::vector<Rank> cluster_ranks,
           std::deque<TransactionState> transaction_states,
@@ -129,11 +146,10 @@ public:
    * 実行計画を建てるスレッドをバックグラウンドで開始する
    */
   void start_planning();
+};
 
-  /**
-   * 現在の情報から実行計画を建てる
-   */
-  virtual void planning();
+class SimplePlanner : public Planner {
+  void planning() override;
 };
 
 /**

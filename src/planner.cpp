@@ -148,14 +148,65 @@ Planner::Planner(std::vector<Rank> cluster_ranks,
                  std::deque<TransactionState> transaction_states,
                  ConcurrentQueue<ExecutorMessage> &executor_message_queue)
     : cluster_ranks(cluster_ranks), transaction_states(transaction_states),
-      executor_message_queue(executor_message_queue), stop(false) {}
+      executor_message_queue(executor_message_queue), stop(false),
+      references(2) {}
 
 void Planner::stop_planning() {
   this->stop = true;
   this->current_thread.detach();
+  // もうスレッドの実行が終了していたなら消す
+  if (this->references.fetch_sub(1) == 1) {
+    delete this;
+  }
 }
 
 void Planner::start_planning() {
-  this->current_thread = std::thread([this]() { this->planning(); });
+  this->current_thread = std::thread([this]() {
+    this->planning();
+    finalize_planning();
+  });
 }
+
+void Planner::finalize_planning() {
+  // PlannerManagerから終了扱いされていたら消す
+  if (this->references.fetch_sub(1) == 1) {
+    delete this;
+  }
+}
+
+void SimplePlanner::planning() {
+  // シンプルな実行計画
+  // 一番新しいトランザクションにクラスタを割り当てて終了
+  if (this->transaction_states.empty()) {
+    return;
+  }
+  TransactionState &state = transaction_states.front();
+  // 初期化されていないなら割り当てをてはいけない
+  if (not state.initialized) {
+    return;
+  }
+  if (not state.now.empty()) {
+    // 何も実行していないなら新しく割り当てる
+    // 一番ランクの値が少ないクラスタを割り当てる
+    u64 target_rank = state.target_ranks.begin()->first;
+
+    for (auto cluster_id : state.future) {
+      if (this->cluster_ranks[cluster_id] == target_rank) {
+        StartUpdateClusterMessage msg;
+        msg.transaction_id = state.transaction_id;
+        msg.cluster_id = cluster_id;
+        this->executor_message_queue.push(msg);
+      }
+    }
+  } else {
+    // 何も実行していない かつ
+    // 何も実行予定でない場合は、そのトランザクションを終了する
+    if (state.future.empty()) {
+      FinalizeTransactionMessage msg;
+      msg.transaction_id = state.transaction_id;
+      this->executor_message_queue.push(msg);
+    }
+  }
+}
+
 } // namespace prf
