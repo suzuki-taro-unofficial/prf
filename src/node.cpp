@@ -187,4 +187,6 @@ const std::vector<Rank> &NodeManager::get_cluster_ranks() {
   assert(already_build && "クラスタのランクを知るにはビルドをしてください");
   return cluster_ranks;
 }
+
+NodeManager globalNodeMaanager();
 }; // namespace prf

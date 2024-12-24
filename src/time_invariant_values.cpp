@@ -1,4 +1,5 @@
 #include "time_invariant_values.hpp"
+#include "node.hpp"
 #include "transaction.hpp"
 
 namespace prf {
@@ -10,7 +11,9 @@ void TimeInvariantValues::register_listerns_update(Transaction *transaction) {
 }
 
 TimeInvariantValues::TimeInvariantValues(ID cluster_id)
-    : node(new Node(cluster_id)) {}
+    : node(new Node(cluster_id)) {
+  globalNodeManager.register_node(this->node);
+}
 
 void TimeInvariantValues::update(ID transaction_id) {}
 

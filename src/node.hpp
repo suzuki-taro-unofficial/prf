@@ -77,4 +77,6 @@ public:
 
   const std::vector<Rank> &get_cluster_ranks();
 };
+
+static NodeManager globalNodeManager;
 }; // namespace prf
