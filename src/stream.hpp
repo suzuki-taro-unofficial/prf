@@ -7,13 +7,15 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 
 namespace prf {
 // 一瞬だけ値が存在するような時変値を表すクラス
 // Stream系列が内部で保持する
 template <class T> class StreamInternal : public TimeInvariantValues {
 private:
-  StreamInternal<T>(ID cluster_id, std::function<T(ID transaction_id)> updater);
+  StreamInternal<T>(ID cluster_id,
+                    std::function<std::optional<T>(ID transaction_id)> updater);
 
   StreamInternal<T>(ID cluster_id);
 
@@ -25,18 +27,18 @@ private:
   // が返す個々の参照自体には排他ロックが存在しないので、それを前提とした設計をする必要がある
   std::mutex mtx;
 
-  std::function<T(ID transaction_id)> updater;
+  std::function<std::optional<T>(ID transaction_id)> updater;
 
 public:
   // transaction以前(現在実行中のトランザクションを含めた)に生成された値を取得する
-  std::shared_ptr<T> sample(Transaction *transaction);
+  std::optional<std::shared_ptr<T>> sample(ID transaction_id);
 
   // transactionに対応する時刻にvalueを登録する
   void send(T value, Transaction *transaction);
 
   void send(T value);
 
-  void update(ID transaction_id) override;
+  void update(Transaction *transaction) override;
 
   void refresh(ID transaction_id) override;
 };
@@ -51,8 +53,12 @@ public:
 
   template <class U> Stream<U> map(std::function<U(std::shared_ptr<T>)> f) {
     ID cluster_id = clusterManager.current_id();
-    std::function<U(ID)> updater = [this, f](ID transaction_id) {
-      return f(this->internal->sample(transaction_id));
+    std::function<std::optional<U>(ID)> updater = [this, f](ID transaction_id) {
+      std::optional<std::shared_ptr<T>> value =
+          this->internal->sample(transaction_id);
+      assert(value &&
+             "mapメソッドでトランザクションに対応する値がありませんでした");
+      return f(*value);
     };
     StreamInternal<U> *inter = new StreamInternal<U>(cluster_id, updater);
     inter->listen(this);

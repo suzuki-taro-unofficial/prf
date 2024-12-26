@@ -9,8 +9,8 @@
 namespace prf {
 // Stream
 template <class T>
-StreamInternal<T>::StreamInternal(ID cluster_id,
-                                  std::function<T(ID transaction_id)> updater)
+StreamInternal<T>::StreamInternal(
+    ID cluster_id, std::function<std::optional<T>(ID transaction_id)> updater)
     : TimeInvariantValues(cluster_id), updater(updater){};
 
 template <class T>
@@ -33,24 +33,27 @@ void StreamInternal<T>::send(T value, Transaction *transaction) {
   {
     std::lock_guard<std::mutex> lock(mtx);
     values[transaction->get_id()] = std::make_shared(value);
-    transaction->register_update(this);
+    this->register_listerns_update(transaction);
   }
 }
 
 template <class T>
-std::shared_ptr<T> StreamInternal<T>::sample(Transaction *transaction) {
+std::optional<std::shared_ptr<T>> StreamInternal<T>::sample(ID transaction_id) {
   std::lock_guard<std::mutex> lock(mtx);
-  ID id = transaction->get_id();
-  auto itr = values.find(id);
-  assert(itr != values.end() &&
-         "TransactionIDに対応する値がStreamInternalにありません");
+  auto itr = values.find(transaction_id);
+  if (itr == values.end()) {
+    return std::nullopt;
+  }
   return *itr;
 }
 
-template <class T> void StreamInternal<T>::update(ID transaction_id) {
-  std::shared_ptr<T> value = std::make_shared<T>(updater(transaction_id));
-  std::lock_guard<std::mutex> lock(mtx);
-  values[transaction_id] = value;
+template <class T> void StreamInternal<T>::update(Transaction *transaction) {
+  ID transaction_id = transaction->get_id();
+  std::optional<T> res = updater(transaction_id);
+  if (res) {
+    std::shared_ptr<T> value = std::make_shared<T>(*res);
+    this->send(value, transaction);
+  }
 }
 
 template <class T> void StreamInternal<T>::refresh(ID transaction_id) {

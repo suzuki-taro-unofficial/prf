@@ -44,7 +44,7 @@ Transaction::~Transaction() {
 void Transaction::register_update(TimeInvariantValues *tiv) {
   ID id = tiv->get_cluster_id();
   if (updating_cluster == id) {
-    // 複数回実行用のキューに積まれないようにするためにこうする
+    // 実行用のキューに同時に同一の時変値が複数詰まれないようにするためにこうする
     if (targets_inside_current_cluster.count(tiv) == 0) {
       targets_inside_current_cluster.insert(tiv);
       u64 rank = tiv->node->get_in_cluster_rank().value;
@@ -64,7 +64,7 @@ ExecuteResult Transaction::execute(ID transaction_id) {
     TimeInvariantValues *tiv = entry.second;
     cleanups.insert(tiv);
     targets_inside_current_cluster.erase(tiv);
-    tiv->update(transaction_id);
+    tiv->update(this);
   }
   ExecuteResult result;
   result.cleanups = cleanups;

@@ -15,7 +15,7 @@ TimeInvariantValues::TimeInvariantValues(ID cluster_id)
   globalNodeManager.register_node(this->node);
 }
 
-void TimeInvariantValues::update(ID transaction_id) {}
+void TimeInvariantValues::update(Transaction *transaction) {}
 
 void TimeInvariantValues::refresh(ID transaction_id) {}
 

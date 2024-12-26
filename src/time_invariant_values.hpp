@@ -11,10 +11,12 @@ class Transaction;
 // StreamとCellが共通して持つべき性質を切り出しているだけなので、これを継承したクラスを利用すること
 class TimeInvariantValues {
 private:
+  // この時変値を参照している時変値のリスト
+  std::vector<TimeInvariantValues *> listners;
+
+protected:
   // この時変値を参照している時変値の更新をトランザクションに登録する
   void register_listerns_update(Transaction *transaction);
-
-  std::vector<TimeInvariantValues *> listners;
 
 public:
   // この時変値のノード
@@ -23,8 +25,8 @@ public:
 
   TimeInvariantValues(ID cluster_id);
 
-  // transaction_idに対応するトランザクションでの更新をする
-  virtual void update(ID transaction_id);
+  // 現在のトランザクションでの更新をする
+  virtual void update(Transaction *transaction);
   // transaction_idに対応するトランザクションとそれ以前での時変値が不要である場合に消去する
   virtual void refresh(ID transaction_id);
 
