@@ -2,7 +2,13 @@
 
 namespace prf {
 // ClusterManager
-u64 ClusterManager::global_current_id = 0;
+
+/**
+ * 現在属しているクラスターのID
+ * 0はSink系に与えられているので1からになっている
+ * ここで発行する値は一時的なものであって、NodeManagerが再度割り当てることに注意
+ */
+u64 ClusterManager::global_current_id = 1;
 // クラスターを生成しなくても暗黙的に生成されたクラスターに属すようにしておく
 u64 ClusterManager::current_clusters = 1;
 
