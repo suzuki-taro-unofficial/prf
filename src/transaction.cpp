@@ -1,11 +1,14 @@
 #include "transaction.hpp"
 #include "cassert"
+#include "cluster.hpp"
 #include "time_invariant_values.hpp"
 #include <atomic>
 
 namespace prf {
 
-bool Transaction::is_in_updating() { return updating_cluster != 0; }
+bool Transaction::is_in_updating() {
+  return updating_cluster != ClusterManager::UNMANAGED_CLUSTER_ID;
+}
 
 Transaction *Transaction::generate_sub_transaction(ID updating_cluster) {
   Transaction *trans = new Transaction(id, updating_cluster);
@@ -17,7 +20,8 @@ Transaction *Transaction::generate_sub_transaction(ID updating_cluster) {
 
 Transaction::Transaction(ID id, ID updating_cluster)
     : id(id), updating_cluster(updating_cluster),
-      inside_transaction(updating_cluster != 0) {}
+      inside_transaction(updating_cluster !=
+                         ClusterManager::UNMANAGED_CLUSTER_ID) {}
 
 Transaction::Transaction() {
   // 既にトランザクションがある場合はそちらを使う
@@ -28,6 +32,7 @@ Transaction::Transaction() {
     id = current_transaction->get_id();
     return;
   }
+  updating_cluster = ClusterManager::UNMANAGED_CLUSTER_ID;
   inside_transaction = false;
   id = next_transaction_id.fetch_add(1);
   current_transaction = this;

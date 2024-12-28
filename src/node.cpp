@@ -1,4 +1,6 @@
 #include "node.hpp"
+#include "cluster.hpp"
+#include "logger.hpp"
 #include "union_find.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -58,10 +60,28 @@ void NodeManager::split_cluster_by_associates() {
   }
 
   for (Node *same_cluster_1 : nodes) {
-    u64 id_1 = same_cluster_1->get_cluster_id();
     for (Node *same_cluster_2 : same_cluster_1->get_same_clusters()) {
-      u64 id_2 = same_cluster_2->get_cluster_id();
       uf.merge(node2u64[same_cluster_1], node2u64[same_cluster_2]);
+    }
+  }
+
+  bool find = false;
+  Node *sink_node = nullptr;
+  {
+    // ClusterId = UNMANAGED_CLUSTER_ID
+    // つまりSink系列のノードは単一のクラスタに纏める
+    for (Node *n : nodes) {
+      if (n->get_cluster_id() == ClusterManager::UNMANAGED_CLUSTER_ID) {
+        if (find) {
+          uf.merge(node2u64[n], node2u64[sink_node]);
+        } else {
+          find = true;
+          sink_node = n;
+        }
+      }
+    }
+    if (not find) {
+      warn_log("グラフにSink系列の時変値が存在しませんでした");
     }
   }
 
@@ -76,6 +96,20 @@ void NodeManager::split_cluster_by_associates() {
     u64 unionfind_id = uf.get_parent(node2u64[node]);
     u64 cluster_id = unionfind_id2cluster_id[unionfind_id];
     node->set_cluster_id(cluster_id);
+  }
+  // IDの再割り当てでSink系列のノードのクラスタIDがUNMANAGED_CLUSTER_IDじゃなくなったら現在そうであるクラスタとswapする
+  if (sink_node != nullptr and
+      sink_node->get_cluster_id() == ClusterManager::UNMANAGED_CLUSTER_ID) {
+    ID sink_id = sink_node->get_cluster_id();
+    for (Node *node : nodes) {
+      ID fixed_id = node->get_cluster_id();
+      if (fixed_id == sink_id) {
+        fixed_id = ClusterManager::UNMANAGED_CLUSTER_ID;
+      } else if (fixed_id == ClusterManager::UNMANAGED_CLUSTER_ID) {
+        fixed_id = sink_id;
+      }
+      node->set_cluster_id(fixed_id);
+    }
   }
 }
 

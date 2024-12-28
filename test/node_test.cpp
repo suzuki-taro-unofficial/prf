@@ -6,8 +6,8 @@
 void build_test1() {
   prf::NodeManager nodeManager;
 
-  prf::Node A(0);
-  prf::Node B(0);
+  prf::Node A(1);
+  prf::Node B(1);
 
   nodeManager.register_node(&A);
   nodeManager.register_node(&B);
@@ -20,8 +20,8 @@ void build_test1() {
 
 void build_test2() {
   prf::NodeManager nodeManager;
-  prf::Node A(0);
-  prf::Node B(1);
+  prf::Node A(1);
+  prf::Node B(2);
 
   // A -(cluster)-> B;
 
@@ -40,9 +40,9 @@ void build_test2() {
 void build_test3() {
   prf::NodeManager nodeManager;
 
-  prf::Node A(0);
-  prf::Node B(1);
-  prf::Node C(2);
+  prf::Node A(1);
+  prf::Node B(2);
+  prf::Node C(3);
 
   A.link_to(&B);
   B.link_to(&C);
@@ -66,10 +66,10 @@ void build_test3() {
 void build_test4() {
   prf::NodeManager nodeManager;
 
-  prf::Node A(0);
-  prf::Node B(1);
-  prf::Node C(1);
-  prf::Node D(2);
+  prf::Node A(1);
+  prf::Node B(2);
+  prf::Node C(2);
+  prf::Node D(3);
 
   // A -(cluster)-> B -(cluster)-> D
   // A -(cluster)-> C -(cluster)-> D
@@ -93,9 +93,9 @@ void build_test4() {
 void build_test5() {
   prf::NodeManager nodeManager;
 
-  prf::Node A(0);
-  prf::Node B(0);
-  prf::Node C(0);
+  prf::Node A(1);
+  prf::Node B(1);
+  prf::Node C(1);
 
   // A -> C
   // B -> C
@@ -115,9 +115,9 @@ void build_test5() {
 
 void build_test6() {
   prf::NodeManager nodeManager;
-  prf::Node A(0);
-  prf::Node B(0);
-  prf::Node C(0);
+  prf::Node A(1);
+  prf::Node B(1);
+  prf::Node C(1);
 
   // A -> B -> C
 
@@ -144,10 +144,10 @@ void build_test6() {
 
 void build_test7() {
   prf::NodeManager nodeManager;
-  prf::Node A(0);
-  prf::Node B(0);
-  prf::Node C(0);
-  prf::Node D(0);
+  prf::Node A(1);
+  prf::Node B(1);
+  prf::Node C(1);
+  prf::Node D(1);
 
   // A -> B -> D
   // A -> C -> D
@@ -176,9 +176,9 @@ void build_test7() {
 
 void build_test8() {
   prf::NodeManager nodeManager;
-  prf::Node A(0);
-  prf::Node B(0);
-  prf::Node C(0);
+  prf::Node A(1);
+  prf::Node B(1);
+  prf::Node C(1);
 
   // A -> B -> C
   // A -> C
@@ -203,8 +203,8 @@ void build_test8() {
 
 void build_test9() {
   prf::NodeManager nodeManager;
-  prf::Node A(0);
-  prf::Node B(1);
+  prf::Node A(1);
+  prf::Node B(2);
 
   // A -(cluster)-> B
 
@@ -221,11 +221,11 @@ void build_test9() {
 
 void build_test10() {
   prf::NodeManager nodeManager;
-  prf::Node A(0);
-  prf::Node B(0);
-  prf::Node C(0);
-  prf::Node D(0);
-  prf::Node E(0);
+  prf::Node A(1);
+  prf::Node B(1);
+  prf::Node C(1);
+  prf::Node D(1);
+  prf::Node E(1);
 
   // A -(loop)-> B
   // C -(loop)-> D -(loop)-> E

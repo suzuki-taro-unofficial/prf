@@ -20,6 +20,13 @@ public:
   bool is_in_cluster();
   void enter_cluster();
   void exit_cluster();
+
+  /**
+   * Sink系列が属するClusterのIDである
+   * ユーザが手動で生成したTransactionは、このIDを参照することとする
+   * このIDは割り当て前と後で値が変わらない
+   */
+  static const ID UNMANAGED_CLUSTER_ID;
 };
 
 extern ClusterManager clusterManager;

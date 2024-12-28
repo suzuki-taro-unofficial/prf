@@ -34,6 +34,11 @@ void ClusterManager::exit_cluster() {
 }
 ClusterManager clusterManager = ClusterManager();
 
+/**
+ * この値が0であることを前提としてコードが組まれているので(0以外にすると対応がかなりめんどう)、変更することはオススメしない
+ */
+const ID ClusterManager::UNMANAGED_CLUSTER_ID = 0;
+
 // class Cluster
 Cluster::Cluster() { clusterManager.enter_cluster(); }
 Cluster::~Cluster() { clusterManager.exit_cluster(); }
