@@ -28,12 +28,12 @@ void Executor::start_loop() {
   while (true) {
     ExecutorMessage msg = messages.pop();
 
-    if (std::holds_alternative<TransactionExecuteMessage>(msg)) {
-      TransactionExecuteMessage &temsg =
-          std::get<TransactionExecuteMessage>(msg);
+    if (std::holds_alternative<TransactionExecuteMessage *>(msg)) {
+      TransactionExecuteMessage *&temsg =
+          std::get<TransactionExecuteMessage *>(msg);
 
       // とりあえず終了しておく
-      temsg.done();
+      temsg->done();
       continue;
     }
     if (std::holds_alternative<StartUpdateClusterMessage>(msg)) {

@@ -1,6 +1,7 @@
 #include "transaction.hpp"
 #include "cassert"
 #include "cluster.hpp"
+#include "executor.hpp"
 #include "time_invariant_values.hpp"
 #include <atomic>
 
@@ -43,6 +44,7 @@ Transaction::~Transaction() {
   if (inside_transaction) {
     return;
   }
+  start_updating();
   current_transaction = nullptr;
 }
 
@@ -75,6 +77,13 @@ ExecuteResult Transaction::execute(ID transaction_id) {
   result.cleanups = cleanups;
   result.targets = targets_outside_current_cluster;
   return result;
+}
+
+void Transaction::start_updating() {
+  TransactionExecuteMessage *msg = new TransactionExecuteMessage(this);
+  ExecutorMessage emsg = msg;
+  Executor::messages.push(emsg);
+  msg->wait();
 }
 
 std::atomic_ulong next_transaction_id(0);

@@ -64,7 +64,7 @@ public:
  * Executorが受け付けるメッセージの型
  */
 using ExecutorMessage =
-    std::variant<TransactionExecuteMessage, StartUpdateClusterMessage, FinalizeTransactionMessage>;
+    std::variant<TransactionExecuteMessage*, StartUpdateClusterMessage, FinalizeTransactionMessage>;
 
 /**
  *トランザクションの更新処理をするクラス
