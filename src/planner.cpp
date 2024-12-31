@@ -74,8 +74,10 @@ void PlannerManager::handleUpdateMessage(
   TransactionState &state = this->transaction_states[idx];
 
   for (const ID id : message.future) {
-    state.future.insert(id);
-    ++state.target_ranks[this->cluster_ranks[id].value];
+    if (state.future.count(id) == 0) {
+      state.future.insert(id);
+      ++state.target_ranks[this->cluster_ranks[id].value];
+    }
   }
   for (const ID id : message.now) {
     auto itr = state.future.find(id);
