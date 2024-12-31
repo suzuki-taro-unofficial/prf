@@ -2,6 +2,7 @@
 #include "concurrent_queue.hpp"
 #include "transaction.hpp"
 #include <condition_variable>
+#include <map>
 #include <mutex>
 #include <variant>
 
@@ -11,18 +12,17 @@ namespace prf {
  * あるトランザクションの更新を開始するメッセージ
  */
 class TransactionExecuteMessage {
-  /**
-   * 更新して欲しいトランザクション
-   */
-  Transaction *transaction;
-
   std::mutex mtx;
   std::condition_variable cond;
   bool already_done;
 
 public:
-  TransactionExecuteMessage(Transaction *transaction);
+  /**
+   * 更新して欲しいトランザクション
+   */
+  Transaction *transaction;
 
+  TransactionExecuteMessage(Transaction *transaction);
   /**
    * 更新処理が終了したことを通知する
    */
@@ -64,13 +64,20 @@ public:
  * Executorが受け付けるメッセージの型
  */
 using ExecutorMessage =
-    std::variant<TransactionExecuteMessage*, StartUpdateClusterMessage, FinalizeTransactionMessage>;
+    std::variant<TransactionExecuteMessage *, StartUpdateClusterMessage,
+                 FinalizeTransactionMessage>;
 
 /**
  *トランザクションの更新処理をするクラス
  */
 class Executor {
 private:
+  /**
+   * Executorが管理しているクラスター
+   * クラスタID -> Message
+   */
+  std::map<ID, TransactionExecuteMessage *> transactions;
+
 public:
   /**
    * Executorが起動していない場合に起動する

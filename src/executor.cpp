@@ -1,5 +1,7 @@
 #include "executor.hpp"
 #include "concurrent_queue.hpp"
+#include "planner.hpp"
+#include <thread>
 #include <variant>
 
 namespace prf {
@@ -21,6 +23,10 @@ void Executor::initialize() {
   std::lock_guard<std::mutex> lock(executor_mutex);
   if (global_executor == nullptr) {
     global_executor = new Executor();
+    // global_executorの処理はバックグラウンドのスレッドで行なう
+    std::thread t([] { global_executor->start_loop(); });
+    // 一度起動したらそのまま放置(異常時の対処は一旦放置)
+    t.detach();
   }
 }
 
@@ -32,8 +38,15 @@ void Executor::start_loop() {
       TransactionExecuteMessage *&temsg =
           std::get<TransactionExecuteMessage *>(msg);
 
-      // とりあえず終了しておく
-      temsg->done();
+      ID transaction_id = temsg->transaction->get_id();
+
+      this->transactions[transaction_id] = temsg;
+
+      // Plannerにトランザクションの開始を通知
+      StartTransactionMessage stmsg;
+      stmsg.transaction_id = transaction_id;
+      PlannerManager::messages.push(stmsg);
+
       continue;
     }
     if (std::holds_alternative<StartUpdateClusterMessage>(msg)) {
