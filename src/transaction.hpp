@@ -25,6 +25,11 @@ struct ExecuteResult {
    * トランザクションが終了時に不要な値の破棄が必要な時変値の集合
    */
   std::set<TimeInvariantValues *> cleanups;
+
+  /**
+   * トランザクションが終了時に呼び出す必要のある関数
+   */
+  std::vector<std::function<void(Transaction *)>> finalizers;
 };
 
 class Transaction {
@@ -65,9 +70,14 @@ private:
   std::map<ID, std::set<TimeInvariantValues *>> targets_outside_current_cluster;
 
   /**
-   * 更新処理を行なうスレッドのためのサブトランザクションを生成する
+   * トランザクションが終了時に不要な値の破棄が必要な時変値の集合
    */
-  Transaction *generate_sub_transaction(ID updating_cluster);
+  std::set<TimeInvariantValues *> cleanups;
+
+  /**
+   * トランザクションが終了時に呼び出す必要のある関数
+   */
+  std::vector<std::function<void(Transaction *)>> finalizers;
 
   /**
    * 更新処理を開始する
@@ -97,9 +107,30 @@ public:
   void register_update(TimeInvariantValues *tiv);
 
   /**
+   * 子トランザクションの実行結果を親トランザクションに登録する
+   * 返り値として新規で更新する必要になったクラスタを返す
+   */
+  std::set<ID> register_execution_result(ExecuteResult result);
+
+  /**
+   * 更新予定(+ 済み)のクラスターの一覧を返す
+   */
+  std::set<ID> target_clusters();
+
+  /**
    * このインスタンスの担当範囲について更新する
    */
-  ExecuteResult execute(ID transaction_id);
+  ExecuteResult execute();
+
+  /**
+   * 更新処理を行なうスレッドのためのサブトランザクションを生成する
+   */
+  Transaction *generate_sub_transaction(ID updating_cluster);
+
+  /**
+   * トランザクションの終了処理をする
+   */
+  void finalize();
 };
 
 extern std::atomic_ulong next_transaction_id;

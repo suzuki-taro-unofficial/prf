@@ -63,7 +63,7 @@ void Transaction::register_update(TimeInvariantValues *tiv) {
   }
 }
 
-ExecuteResult Transaction::execute(ID transaction_id) {
+ExecuteResult Transaction::execute() {
   std::set<TimeInvariantValues *> cleanups;
   while (not executor.empty()) {
     auto entry = executor.top();
@@ -84,6 +84,49 @@ void Transaction::start_updating() {
   ExecutorMessage emsg = msg;
   Executor::messages.push(emsg);
   msg->wait();
+  delete msg;
+  delete this;
+}
+
+std::set<ID> Transaction::register_execution_result(ExecuteResult result) {
+  assert(not this->is_in_updating() &&
+         "更新用のトランザクションで呼び出すことを想定していません");
+  std::set<ID> res;
+  for (auto clustered_tivs : result.targets) {
+    ID cluster_id = clustered_tivs.first;
+    if (this->targets_outside_current_cluster.count(cluster_id) == 0) {
+      res.insert(id);
+    }
+    for (auto tiv : clustered_tivs.second) {
+      this->targets_outside_current_cluster[cluster_id].insert(tiv);
+    }
+  }
+  for (auto cleanup : result.cleanups) {
+    this->cleanups.insert(cleanup);
+  }
+  for (auto finalizer : result.finalizers) {
+    this->finalizers.push_back(finalizer);
+  }
+  return res;
+}
+
+std::set<ID> Transaction::target_clusters() {
+  assert(not this->is_in_updating() &&
+         "更新用のトランザクションで呼び出すことを想定していません");
+  std::set<ID> res;
+  for (auto &i : this->targets_outside_current_cluster) {
+    res.insert(i.first);
+  }
+  return res;
+}
+
+void Transaction::finalize() {
+  for (auto finalizer : this->finalizers) {
+    finalizer(this);
+  }
+  for (auto cleanup : this->cleanups) {
+    cleanup->refresh(this->get_id());
+  }
 }
 
 std::atomic_ulong next_transaction_id(0);

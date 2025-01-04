@@ -74,9 +74,15 @@ class Executor {
 private:
   /**
    * Executorが管理しているクラスター
-   * クラスタID -> Message
+   * トランザクションID -> Message
    */
   std::map<ID, TransactionExecuteMessage *> transactions;
+
+  /**
+   * トランザクションが更新しているクラスターの一覧
+   * トランザクションID -> {更新中(+済み)のクラスタ}
+   */
+  std::map<ID, std::set<ID>> transaction_updatings;
 
 public:
   /**
