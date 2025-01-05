@@ -91,6 +91,10 @@ public:
 
 template <class T> class StreamLoop : public Stream<T> {
 private:
+  /**
+   * 既にLoopしているか否か
+   */
+    bool looped;
 public:
   StreamLoop(Stream<T> s);
 };

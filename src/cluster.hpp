@@ -34,6 +34,7 @@ extern ClusterManager clusterManager;
 // クラスタの範囲を示すためのクラス
 // このクラスのインスタンスが生成されてから消えるまでを一つのクラスタとする
 class Cluster {
+public:
   Cluster();
   ~Cluster();
 };
