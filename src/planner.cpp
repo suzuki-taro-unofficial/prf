@@ -2,6 +2,7 @@
 #include "executor.hpp"
 #include "logger.hpp"
 #include "rank.hpp"
+#include "thread.hpp"
 
 namespace prf {
 bool PlannerManager::handleMessage(PlannerMessage message) {
@@ -167,7 +168,10 @@ void PlannerManager::start_loop() {
 void PlannerManager::initialize(std::vector<Rank> ranks) {
   globalPlannerManager = new PlannerManager(ranks);
   PlannerManager *ptr = globalPlannerManager;
-  std::thread t([ptr]() -> void { ptr->start_loop(); });
+  std::thread t([ptr]() -> void {
+    ptr->start_loop();
+    wait_threads.fetch_sub(1);
+  });
   t.detach();
 }
 

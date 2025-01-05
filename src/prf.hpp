@@ -10,4 +10,9 @@ namespace prf {
  */
 void build();
 
+/**
+ * 実行のために確保したリソースを実行前に戻す
+ */
+void initialize();
+
 } // namespace prf

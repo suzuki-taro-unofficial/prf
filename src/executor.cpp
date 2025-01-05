@@ -2,6 +2,7 @@
 #include "concurrent_queue.hpp"
 #include "logger.hpp"
 #include "planner.hpp"
+#include "thread.hpp"
 #include "time_invariant_values.hpp"
 #include <mutex>
 #include <thread>
@@ -27,7 +28,10 @@ void Executor::initialize() {
   if (global_executor == nullptr) {
     global_executor = new Executor();
     // global_executorの処理はバックグラウンドのスレッドで行なう
-    std::thread t([] { global_executor->start_loop(); });
+    std::thread t([] {
+      global_executor->start_loop();
+      wait_threads.fetch_sub(1);
+    });
     // 一度起動したらそのまま放置(異常時の対処は一旦放置)
     t.detach();
   }

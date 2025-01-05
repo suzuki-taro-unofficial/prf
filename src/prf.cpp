@@ -14,4 +14,11 @@ void build() {
   PlannerManager::initialize(ranks);
 }
 
+void initialize() {
+  // メモリリークは一旦考えない方向で
+  NodeManager::globalNodeManager = new NodeManager;
+  PlannerManager::globalPlannerManager = nullptr;
+  Executor::global_executor = nullptr;
+}
+
 } // namespace prf
