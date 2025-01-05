@@ -19,6 +19,11 @@ void initialize() {
   NodeManager::globalNodeManager = new NodeManager;
   PlannerManager::globalPlannerManager = nullptr;
   Executor::global_executor = nullptr;
+
+  while (PlannerManager::messages.try_pop()) {
+  }
+  while (Executor::messages.try_pop()) {
+  }
 }
 
 } // namespace prf
