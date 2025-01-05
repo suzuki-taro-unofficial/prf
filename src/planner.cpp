@@ -1,6 +1,7 @@
 #include "planner.hpp"
 #include "executor.hpp"
 #include "logger.hpp"
+#include "rank.hpp"
 
 namespace prf {
 bool PlannerManager::handleMessage(PlannerMessage message) {
@@ -144,6 +145,19 @@ void PlannerManager::start_planning() {
                                 Executor::messages);
 
   current_planner->start_planning();
+}
+
+void PlannerManager::start_loop() {
+  while (true) {
+    PlannerMessage msg = PlannerManager::messages.pop();
+    this->handleMessage(msg);
+  }
+}
+
+void PlannerManager::initialize(std::vector<Rank> ranks) {
+  globalPlannerManager = new PlannerManager(ranks);
+  PlannerManager *ptr = globalPlannerManager;
+  std::thread t([ptr]() -> void { ptr->start_loop(); });
 }
 
 Planner::Planner(std::vector<Rank> cluster_ranks,

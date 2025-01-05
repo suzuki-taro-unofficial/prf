@@ -200,10 +200,17 @@ public:
   void start_planning();
 
   /**
-   * Plannerの仕事を開始する
+   * PlannerManagerの仕事を開始する
    */
   void start_loop();
 
+  /**
+   * globalPlannerManagerを初期化する
+   */
+  static void initialize(std::vector<Rank> ranks);
+
   static ConcurrentQueue<PlannerMessage> messages;
+
+  static PlannerManager *globalPlannerManager;
 };
 } // namespace prf
