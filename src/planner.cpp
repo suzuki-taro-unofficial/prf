@@ -70,6 +70,8 @@ void PlannerManager::handleUpdateMessage(
     }
   }
 
+  info_log("トランザクションの状態の変更が通知されました ID: %ld", id_arg);
+
   // transaction_statesは連番で入っていることを期待しているので
   // 下記のようにランダムアクセスできる
   u64 idx = (u64)id_arg - (u64)id_min;
@@ -110,6 +112,7 @@ void PlannerManager::handleUpdateMessage(
       }
     }
   }
+
   // 状態が更新されたトランザクションは初期化されたものと見做す
   state.initialized = true;
 }
@@ -225,6 +228,13 @@ void SimplePlanner::planning() {
   if (not state.initialized) {
     return;
   }
+  if (state.now.empty() and state.future.empty()) {
+    // 更新できるクラスタがもう無い場合は終了する
+    FinalizeTransactionMessage msg;
+    msg.transaction_id = state.transaction_id;
+    this->executor_message_queue.push(msg);
+    return;
+  }
   if (state.now.empty()) {
     // 何も実行していないなら新しく割り当てる
     // 一番ランクの値が少ないクラスタを割り当てる
@@ -240,13 +250,7 @@ void SimplePlanner::planning() {
       }
     }
   } else {
-    // 何も実行していない かつ
-    // 何も実行予定でない場合は、そのトランザクションを終了する
-    if (state.future.empty()) {
-      FinalizeTransactionMessage msg;
-      msg.transaction_id = state.transaction_id;
-      this->executor_message_queue.push(msg);
-    }
+    // 何かを実行中だったら新しく割り当てない
   }
 }
 

@@ -97,7 +97,7 @@ std::set<ID> Transaction::register_execution_result(ExecuteResult result) {
   for (auto clustered_tivs : result.targets) {
     ID cluster_id = clustered_tivs.first;
     if (this->targets_outside_current_cluster.count(cluster_id) == 0) {
-      res.insert(id);
+      res.insert(cluster_id);
     }
     for (auto tiv : clustered_tivs.second) {
       this->targets_outside_current_cluster[cluster_id].insert(tiv);
