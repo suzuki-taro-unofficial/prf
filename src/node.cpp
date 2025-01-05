@@ -39,7 +39,7 @@ std::atomic_ulong next_node_id(0);
 // NodeManager
 NodeManager::NodeManager() : nodes(), cluster_ranks(), already_build(false) {}
 
-void NodeManager::register_node(Node *node) { nodes.push_back(node); }
+void NodeManager::register_node(Node *node) { this->nodes.push_back(node); }
 
 void NodeManager::split_cluster_by_associates() {
   std::map<Node *, u64> node2u64 = numbering(nodes);
@@ -81,7 +81,7 @@ void NodeManager::split_cluster_by_associates() {
       }
     }
     if (not find) {
-      warn_log("グラフにSink系列の時変値が存在しませんでした");
+      info_log("グラフにSink系列の時変値が存在しませんでした");
     }
   }
 
@@ -99,7 +99,7 @@ void NodeManager::split_cluster_by_associates() {
   }
   // IDの再割り当てでSink系列のノードのクラスタIDがUNMANAGED_CLUSTER_IDじゃなくなったら現在そうであるクラスタとswapする
   if (sink_node != nullptr and
-      sink_node->get_cluster_id() == ClusterManager::UNMANAGED_CLUSTER_ID) {
+      sink_node->get_cluster_id() != ClusterManager::UNMANAGED_CLUSTER_ID) {
     ID sink_id = sink_node->get_cluster_id();
     for (Node *node : nodes) {
       ID fixed_id = node->get_cluster_id();
@@ -209,6 +209,7 @@ void NodeManager::generate_in_cluster_ranks() {
 }
 
 void NodeManager::build() {
+  assert(this->nodes.size() > 0);
   assert(not already_build && "ビルドは一度まで");
   already_build = true;
 
@@ -222,5 +223,5 @@ const std::vector<Rank> &NodeManager::get_cluster_ranks() {
   return cluster_ranks;
 }
 
-NodeManager globalNodeMaanager();
+NodeManager *NodeManager::globalNodeManager = new NodeManager();
 }; // namespace prf

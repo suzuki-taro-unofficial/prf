@@ -2,6 +2,7 @@
 #include "cassert"
 #include "cluster.hpp"
 #include "executor.hpp"
+#include "logger.hpp"
 #include "time_invariant_values.hpp"
 #include <atomic>
 
@@ -68,7 +69,6 @@ void Transaction::register_cleanup(TimeInvariantValues *tiv) {
 }
 
 ExecuteResult Transaction::execute() {
-  std::set<TimeInvariantValues *> cleanups;
   while (not executor.empty()) {
     auto entry = executor.top();
     executor.pop();
@@ -77,7 +77,7 @@ ExecuteResult Transaction::execute() {
     tiv->update(this);
   }
   ExecuteResult result;
-  result.cleanups = cleanups;
+  result.cleanups = this->cleanups;
   result.targets = targets_outside_current_cluster;
   return result;
 }
@@ -88,7 +88,6 @@ void Transaction::start_updating() {
   Executor::messages.push(emsg);
   msg->wait();
   delete msg;
-  delete this;
 }
 
 std::set<ID> Transaction::register_execution_result(ExecuteResult result) {

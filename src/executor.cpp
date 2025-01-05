@@ -35,13 +35,19 @@ void Executor::initialize() {
 
 void Executor::start_loop() {
   while (true) {
-    ExecutorMessage msg = messages.pop();
+    std::optional<ExecutorMessage> omsg = messages.pop();
+    if (not omsg) {
+      break;
+    }
+    ExecutorMessage msg = *omsg;
 
     if (std::holds_alternative<TransactionExecuteMessage *>(msg)) {
       TransactionExecuteMessage *&temsg =
           std::get<TransactionExecuteMessage *>(msg);
 
       ID transaction_id = temsg->transaction->get_id();
+
+      info_log("新しいトランザクションが開始しました ID: %ld", transaction_id);
 
       this->transactions[transaction_id] = temsg;
 
@@ -78,6 +84,10 @@ void Executor::start_loop() {
         continue;
       }
 
+      info_log("クラスタの更新を依頼されました Transaction: %ld, "
+               "Cluster: %ld",
+               transaction_id, cluster_id);
+
       Transaction *transaction =
           this->transactions[transaction_id]->transaction;
       Transaction *subtransaction =
@@ -87,7 +97,7 @@ void Executor::start_loop() {
         // 更新が開始したことを通知
         UpdateTransactionMessage utmsg;
         utmsg.transaction_id = transaction_id;
-        utmsg.now.push_back(transaction_id);
+        utmsg.now.push_back(cluster_id);
         PlannerManager::messages.push(utmsg);
       }
 
@@ -102,9 +112,13 @@ void Executor::start_loop() {
         for (auto future : futures) {
           utmsg.future.push_back(future);
         }
-        utmsg.finish.push_back(transaction_id);
+        utmsg.finish.push_back(cluster_id);
         PlannerManager::messages.push(utmsg);
       }
+
+      info_log("クラスタの更新が終了しました Transaction: %ld, "
+               "Cluster: %ld",
+               transaction_id, cluster_id);
 
       continue;
     }
@@ -120,19 +134,25 @@ void Executor::start_loop() {
         continue;
       }
 
+      info_log("トランザクションの終了を依頼されました ID: %ld",
+               transaction_id);
+
       this->transactions[transaction_id]->transaction->finalize();
       this->transactions[transaction_id]->done();
+
+      this->transactions.erase(transaction_id);
+      this->transaction_updatings.erase(transaction_id);
 
       {
         // トランザクションの終了をPlannerに通知
         FinishTransactionMessage ftmsg;
         ftmsg.transaction_id = transaction_id;
-
         PlannerManager::messages.push(ftmsg);
       }
       continue;
     }
   }
+  info_log("Executorの実行を停止します");
 }
 
 ConcurrentQueue<ExecutorMessage> Executor::messages;

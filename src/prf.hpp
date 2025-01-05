@@ -9,4 +9,5 @@ namespace prf {
  * FRPの実行の準備を終える
  */
 void build();
+
 } // namespace prf

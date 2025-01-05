@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cluster.hpp"
+#include "logger.hpp"
 #include "time_invariant_values.hpp"
 #include "transaction.hpp"
 #include <cassert>
@@ -77,9 +78,7 @@ public:
     return Stream(inter);
   }
 
-  void listen(std::function<void(std::shared_ptr<T>)> f) {
-    this->internal->listenFromOuter(f);
-  }
+  void listen(std::function<void(std::shared_ptr<T>)> f);
 };
 
 template <class T> class StreamSink : public Stream<T> {
@@ -123,8 +122,10 @@ template <class T> void StreamInternal<T>::send(T value) {
 template <class T>
 void StreamInternal<T>::send(T value, Transaction *transaction) {
   {
-    std::lock_guard<std::mutex> lock(mtx);
-    values[transaction->get_id()] = std::make_shared<T>(value);
+    {
+      std::lock_guard<std::mutex> lock(mtx);
+      values[transaction->get_id()] = std::make_shared<T>(value);
+    }
     this->register_listeners_update(transaction);
     this->register_cleanup(transaction);
   }
@@ -176,7 +177,16 @@ template <class T>
 Stream<T>::Stream()
     : internal(new StreamInternal<T>(clusterManager.current_id())) {}
 
-template <class T> StreamSink<T>::StreamSink() : prf::Stream<T>() {}
+template <class T>
+void Stream<T>::listen(std::function<void(std::shared_ptr<T>)> f) {
+  this->internal->listenFromOuter(f);
+}
+
+template <class T>
+StreamSink<T>::StreamSink()
+    : prf::Stream<T>(
+          new StreamInternal<T>(ClusterManager::UNMANAGED_CLUSTER_ID)) {}
+
 template <class T> void StreamSink<T>::send(T value) {
   this->internal->send(value);
 }

@@ -208,6 +208,9 @@ void build_test9() {
 
   // A -(cluster)-> B
 
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+
   A.link_to(&B);
 
   nodeManager.build();
@@ -229,6 +232,12 @@ void build_test10() {
 
   // A -(loop)-> B
   // C -(loop)-> D -(loop)-> E
+
+  nodeManager.register_node(&A);
+  nodeManager.register_node(&B);
+  nodeManager.register_node(&C);
+  nodeManager.register_node(&D);
+  nodeManager.register_node(&E);
 
   A.loop_child_to(&B);
 

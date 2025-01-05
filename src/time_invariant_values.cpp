@@ -1,4 +1,5 @@
 #include "time_invariant_values.hpp"
+#include "logger.hpp"
 #include "node.hpp"
 #include "transaction.hpp"
 
@@ -16,7 +17,7 @@ void TimeInvariantValues::register_cleanup(Transaction *transaction) {
 
 TimeInvariantValues::TimeInvariantValues(ID cluster_id)
     : node(new Node(cluster_id)) {
-  globalNodeManager.register_node(this->node);
+  NodeManager::globalNodeManager->register_node(this->node);
 }
 
 void TimeInvariantValues::update(Transaction *transaction) {}

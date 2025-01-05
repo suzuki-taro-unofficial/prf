@@ -16,9 +16,9 @@ void test_1() {
   });
 
   std::thread t2([&]() {
-    sum += vs.pop();
-    sum += vs.pop();
-    sum += vs.pop();
+    sum += *vs.pop();
+    sum += *vs.pop();
+    sum += *vs.pop();
   });
 
   t1.join();

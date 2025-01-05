@@ -65,8 +65,8 @@ void PlannerManager::handleUpdateMessage(
       warn_log("対応するトランザクションが存在しなかった (min: %lu, max: "
                "%lu, arg: %lu",
                id_min, id_max, id_arg);
+      return;
     }
-    return;
   }
 
   // transaction_statesは連番で入っていることを期待しているので
@@ -141,23 +141,34 @@ void PlannerManager::start_planning() {
   if (current_planner != nullptr) {
     current_planner->stop_planning();
   }
-  current_planner = new Planner(this->cluster_ranks, this->transaction_states,
-                                Executor::messages);
+  current_planner = new SimplePlanner(
+      this->cluster_ranks, this->transaction_states, Executor::messages);
 
   current_planner->start_planning();
 }
 
 void PlannerManager::start_loop() {
   while (true) {
-    PlannerMessage msg = PlannerManager::messages.pop();
-    this->handleMessage(msg);
+    std::optional<PlannerMessage> omsg = PlannerManager::messages.pop();
+    if (not omsg) {
+      break;
+    }
+    bool need_refresh = this->handleMessage(*omsg);
+    if (need_refresh) {
+      this->start_planning();
+    }
   }
+  if (this->current_planner != nullptr) {
+    this->current_planner->stop_planning();
+  }
+  info_log("PlannerManagerの実行を停止します");
 }
 
 void PlannerManager::initialize(std::vector<Rank> ranks) {
   globalPlannerManager = new PlannerManager(ranks);
   PlannerManager *ptr = globalPlannerManager;
   std::thread t([ptr]() -> void { ptr->start_loop(); });
+  t.detach();
 }
 
 Planner::Planner(std::vector<Rank> cluster_ranks,
@@ -179,6 +190,7 @@ void Planner::stop_planning() {
 void Planner::start_planning() {
   this->current_thread = std::thread([this]() {
     this->planning();
+
     finalize_planning();
   });
 }
@@ -209,7 +221,7 @@ void SimplePlanner::planning() {
   if (not state.initialized) {
     return;
   }
-  if (not state.now.empty()) {
+  if (state.now.empty()) {
     // 何も実行していないなら新しく割り当てる
     // 一番ランクの値が少ないクラスタを割り当てる
     u64 target_rank = state.target_ranks.begin()->first;
@@ -220,6 +232,7 @@ void SimplePlanner::planning() {
         msg.transaction_id = state.transaction_id;
         msg.cluster_id = cluster_id;
         this->executor_message_queue.push(msg);
+        return;
       }
     }
   } else {
