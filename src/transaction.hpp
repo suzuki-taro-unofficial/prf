@@ -10,7 +10,11 @@
 #include <vector>
 
 namespace prf {
+
+
 class TimeInvariantValues;
+class Transaction;
+
 
 /**
  * クラスタの更新が終了時にトランザクションへ返すデータ
