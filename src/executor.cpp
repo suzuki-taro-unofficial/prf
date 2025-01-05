@@ -3,6 +3,7 @@
 #include "logger.hpp"
 #include "planner.hpp"
 #include "time_invariant_values.hpp"
+#include <mutex>
 #include <thread>
 #include <variant>
 
@@ -133,5 +134,9 @@ void Executor::start_loop() {
     }
   }
 }
+
+ConcurrentQueue<ExecutorMessage> Executor::messages;
+Executor *Executor::global_executor = nullptr;
+std::mutex Executor::executor_mutex;
 
 } // namespace prf

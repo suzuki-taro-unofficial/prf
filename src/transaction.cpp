@@ -63,6 +63,10 @@ void Transaction::register_update(TimeInvariantValues *tiv) {
   }
 }
 
+void Transaction::register_cleanup(TimeInvariantValues *tiv) {
+  cleanups.insert(tiv);
+}
+
 ExecuteResult Transaction::execute() {
   std::set<TimeInvariantValues *> cleanups;
   while (not executor.empty()) {
@@ -124,6 +128,8 @@ void Transaction::finalize() {
     cleanup->refresh(this->get_id());
   }
 }
+
+ID Transaction::get_id() { return id; }
 
 std::atomic_ulong next_transaction_id(0);
 thread_local Transaction *current_transaction = nullptr;

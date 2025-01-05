@@ -149,7 +149,13 @@ public:
 };
 
 class SimplePlanner : public Planner {
+protected:
   void planning() override;
+
+public:
+  SimplePlanner(std::vector<Rank> cluster_ranks,
+                std::deque<TransactionState> transaction_states,
+                ConcurrentQueue<ExecutorMessage> &executor_message_queue);
 };
 
 /**

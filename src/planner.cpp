@@ -190,6 +190,14 @@ void Planner::finalize_planning() {
   }
 }
 
+void Planner::planning() {}
+
+SimplePlanner::SimplePlanner(
+    std::vector<Rank> cluster_ranks,
+    std::deque<TransactionState> transaction_states,
+    ConcurrentQueue<ExecutorMessage> &executor_message_queue)
+    : Planner(cluster_ranks, transaction_states, executor_message_queue) {}
+
 void SimplePlanner::planning() {
   // シンプルな実行計画
   // 一番新しいトランザクションにクラスタを割り当てて終了
@@ -197,7 +205,7 @@ void SimplePlanner::planning() {
     return;
   }
   TransactionState &state = transaction_states.front();
-  // 初期化されていないなら割り当てをてはいけない
+  // 初期化されていないなら割り当てをしてはいけない
   if (not state.initialized) {
     return;
   }
@@ -224,5 +232,8 @@ void SimplePlanner::planning() {
     }
   }
 }
+
+ConcurrentQueue<PlannerMessage> PlannerManager::messages;
+PlannerManager *PlannerManager::globalPlannerManager = nullptr;
 
 } // namespace prf
