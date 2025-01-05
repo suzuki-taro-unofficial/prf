@@ -103,9 +103,6 @@ std::set<ID> Transaction::register_execution_result(ExecuteResult result) {
   for (auto cleanup : result.cleanups) {
     this->cleanups.insert(cleanup);
   }
-  for (auto finalizer : result.finalizers) {
-    this->finalizers.push_back(finalizer);
-  }
   return res;
 }
 
@@ -120,8 +117,8 @@ std::set<ID> Transaction::target_clusters() {
 }
 
 void Transaction::finalize() {
-  for (auto finalizer : this->finalizers) {
-    finalizer(this);
+  for (auto cleanup : this->cleanups) {
+    cleanup->finalize(this);
   }
   for (auto cleanup : this->cleanups) {
     cleanup->refresh(this->get_id());

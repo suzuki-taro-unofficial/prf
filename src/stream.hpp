@@ -30,9 +30,16 @@ private:
 
   std::function<std::optional<T>(ID transaction_id)> updater;
 
+  /**
+   * 時変値の変化をFRPの外でlistenしている関数のリスト
+   */
+  std::vector<std::function<void(std::shared_ptr<T>)>> listeners;
+
 public:
   // transaction以前(現在実行中のトランザクションを含めた)に生成された値を取得する
   std::optional<std::shared_ptr<T>> sample(ID transaction_id);
+
+  void listen(std::function<void(std::shared_ptr<T>)>);
 
   // transactionに対応する時刻にvalueを登録する
   void send(T value, Transaction *transaction);
@@ -42,6 +49,8 @@ public:
   void update(Transaction *transaction) override;
 
   void refresh(ID transaction_id) override;
+
+  void finalize(Transaction *transaction) override;
 };
 
 template <class T> class Stream {
@@ -64,6 +73,10 @@ public:
     StreamInternal<U> *inter = new StreamInternal<U>(cluster_id, updater);
     inter->listen(this);
     return Stream(inter);
+  }
+
+  void listen(std::function<void(std::shared_ptr<T>)> f) {
+    this->internal->listen(f);
   }
 };
 
@@ -122,6 +135,11 @@ std::optional<std::shared_ptr<T>> StreamInternal<T>::sample(ID transaction_id) {
   return *itr;
 }
 
+template <class T>
+void StreamInternal<T>::listen(std::function<void(std::shared_ptr<T>)> f) {
+  listeners.push_back(f);
+}
+
 template <class T> void StreamInternal<T>::update(Transaction *transaction) {
   ID transaction_id = transaction->get_id();
   std::optional<T> res = updater(transaction_id);
@@ -136,6 +154,13 @@ template <class T> void StreamInternal<T>::refresh(ID transaction_id) {
   auto itr = values.find(transaction_id);
   if (itr != values.end()) {
     values.erase(itr);
+  }
+}
+
+template <class T> void StreamInternal<T>::finalize(Transaction *transaction) {
+  std::shared_ptr<T> value = this->sample(transaction->get_id());
+  for (std::function<void(std::shared_ptr<T>)> &listener : listeners) {
+    listener(value);
   }
 }
 

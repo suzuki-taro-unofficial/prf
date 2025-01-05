@@ -36,6 +36,11 @@ public:
   // transaction_idに対応するトランザクションとそれ以前での時変値が不要である場合に消去する
   virtual void refresh(ID transaction_id);
 
+  /**
+   * トランザクションの終了時に必要な処理を行なう
+   */
+  virtual void finalize(Transaction *transaction);
+
   ID get_cluster_id();
 
   // 引数の時変値に更新があったときに連動して更新されるようにする

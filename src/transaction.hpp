@@ -27,11 +27,6 @@ struct ExecuteResult {
    * トランザクションが終了時に不要な値の破棄が必要な時変値の集合
    */
   std::set<TimeInvariantValues *> cleanups;
-
-  /**
-   * トランザクションが終了時に呼び出す必要のある関数
-   */
-  std::vector<std::function<void(Transaction *)>> finalizers;
 };
 
 class Transaction {
@@ -75,11 +70,6 @@ private:
    * トランザクションが終了時に不要な値の破棄が必要な時変値の集合
    */
   std::set<TimeInvariantValues *> cleanups;
-
-  /**
-   * トランザクションが終了時に呼び出す必要のある関数
-   */
-  std::vector<std::function<void(Transaction *)>> finalizers;
 
   /**
    * 更新処理を開始する
