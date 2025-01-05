@@ -11,10 +11,8 @@
 
 namespace prf {
 
-
 class TimeInvariantValues;
 class Transaction;
-
 
 /**
  * クラスタの更新が終了時にトランザクションへ返すデータ
@@ -109,6 +107,11 @@ public:
    * 更新の必要な時変値を登録する
    */
   void register_update(TimeInvariantValues *tiv);
+
+  /**
+   * 後処理の必要な時変値を登録する
+   */
+  void register_cleanup(TimeInvariantValues *tiv);
 
   /**
    * 子トランザクションの実行結果を親トランザクションに登録する

@@ -16,7 +16,13 @@ private:
 
 protected:
   // この時変値を参照している時変値の更新をトランザクションに登録する
-  void register_listerns_update(Transaction *transaction);
+  void register_listeners_update(Transaction *transaction);
+
+  /**
+   * この時変値がトランザクションの終了時に後処理の必要があることを登録する
+   * このメソッドで登録しておかないと値が残り続けるので注意
+   */
+  void register_cleanup(Transaction *transaction);
 
 public:
   // この時変値のノード

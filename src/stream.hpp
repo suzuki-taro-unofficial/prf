@@ -107,7 +107,8 @@ void StreamInternal<T>::send(T value, Transaction *transaction) {
   {
     std::lock_guard<std::mutex> lock(mtx);
     values[transaction->get_id()] = std::make_shared(value);
-    this->register_listerns_update(transaction);
+    this->register_listeners_update(transaction);
+    this->register_cleanup(transaction);
   }
 }
 

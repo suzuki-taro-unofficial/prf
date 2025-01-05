@@ -69,7 +69,6 @@ ExecuteResult Transaction::execute() {
     auto entry = executor.top();
     executor.pop();
     TimeInvariantValues *tiv = entry.second;
-    cleanups.insert(tiv);
     targets_inside_current_cluster.erase(tiv);
     tiv->update(this);
   }

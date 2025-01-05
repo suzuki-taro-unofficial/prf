@@ -4,10 +4,14 @@
 
 namespace prf {
 
-void TimeInvariantValues::register_listerns_update(Transaction *transaction) {
+void TimeInvariantValues::register_listeners_update(Transaction *transaction) {
   for (auto tiv : this->listners) {
     transaction->register_update(tiv);
   }
+}
+
+void TimeInvariantValues::register_cleanup(Transaction *transaction) {
+  transaction->register_cleanup(this);
 }
 
 TimeInvariantValues::TimeInvariantValues(ID cluster_id)
