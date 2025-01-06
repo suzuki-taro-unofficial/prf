@@ -3,6 +3,7 @@
 #include "prf.hpp"
 #include "stream.hpp"
 #include "thread.hpp"
+#include "transaction.hpp"
 #include <cassert>
 #include <string>
 
@@ -143,10 +144,78 @@ void test_5() {
   assert(sum == 17 && "StreamLoopが正しく動作している");
 }
 
+void test_6() {
+  prf::StreamSink<int> s1;
+
+  prf::Stream<int> s2 = s1.map([](int n) -> int { return n + 1; });
+  prf::Stream<int> s3 = s1.map([](int n) -> int { return n * n; });
+
+  prf::Stream<int> s4 = s2.merge(s3, [](int n, int m) -> int { return n + m; });
+  int sum1 = 0;
+  s4.listen([&sum1](int n) -> void { sum1 += n; });
+
+  prf::Stream<int> s5 = s2.orElse(s3);
+  int sum2 = 0;
+  s5.listen([&sum2](int n) -> void { sum2 += n; });
+
+  prf::build();
+
+  s1.send(1);
+  assert(sum1 == 3 && "両方が発火しているときにmergeが正しく動いている");
+  assert(sum2 == 2 && "両方が発火しているときにorElseが正しく動いている");
+
+  s1.send(2);
+  assert(sum1 == 10 && "両方が発火しているときにmergeが正しく動いている");
+  assert(sum2 == 5 && "両方が発火しているときにorElseが正しく動いている");
+
+  s1.send(3);
+  assert(sum1 == 23 && "両方が発火しているときにmergeが正しく動いている");
+  assert(sum2 == 9 && "両方が発火しているときにorElseが正しく動いている");
+}
+
+void test_7() {
+  prf::StreamSink<int> s1;
+  prf::StreamSink<int> s2;
+
+  prf::Stream<int> s3 = s1.merge(s2, [](int n, int m) -> int { return n + m; });
+  int sum1 = 0;
+  s3.listen([&sum1](int n) -> void { sum1 += n; });
+
+  prf::Stream<int> s4 = s1.orElse(s2);
+  int sum2 = 0;
+  s4.listen([&sum2](int n) -> void { sum2 += n; });
+
+  prf::build();
+
+  {
+    prf::Transaction trans;
+    s1.send(10);
+  }
+  assert(sum1 == 10 && "片方が発火しているときにmergeが正しく動いている");
+  assert(sum2 == 10 && "片方が発火しているときにorElseが正しく動いている");
+
+  {
+    prf::Transaction trans;
+    s2.send(20);
+  }
+  assert(sum1 == 30 && "片方が発火しているときにmergeが正しく動いている");
+  assert(sum2 == 30 && "片方が発火しているときにorElseが正しく動いている");
+
+  {
+    prf::Transaction trans;
+    s1.send(10);
+    s2.send(20);
+  }
+  assert(sum1 == 60 && "両方が発火しているときにmergeが正しく動いている");
+  assert(sum2 == 40 && "両方が発火しているときにorElseが正しく動いている");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
   run_test(test_3);
   run_test(test_4);
   run_test(test_5);
+  run_test(test_6);
+  run_test(test_7);
 }

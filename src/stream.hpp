@@ -85,6 +85,10 @@ public:
 
   template <class F> void listen(F f);
 
+  template <class F> Stream<T> merge(Stream<T> s2, F f);
+
+  Stream<T> orElse(Stream<T> s2);
+
   friend StreamLoop<T>;
 };
 
@@ -193,6 +197,31 @@ Stream<T>::Stream()
 
 template <class T> template <class F> void Stream<T>::listen(F f) {
   this->internal->listenFromOuter([f](std::shared_ptr<T> v) -> void { f(*v); });
+}
+
+template <class T>
+template <class F>
+Stream<T> Stream<T>::merge(Stream<T> s2, F f) {
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<T>(ID)> updater = [this, s2, f](ID id) -> T {
+    std::optional<std::shared_ptr<T>> v1 = this->internal->sample(id);
+    std::optional<std::shared_ptr<T>> v2 = s2.internal->sample(id);
+    if (v1 and v2) {
+      return f(**v1, **v2);
+    }
+    if (not v2) {
+      return **v1;
+    }
+    return **v2;
+  };
+  StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(s2.internal);
+  return Stream<T>(inter);
+}
+
+template <class T> Stream<T> Stream<T>::orElse(Stream<T> s2) {
+  return this->merge(s2, [](T x, T y) -> T { return x; });
 }
 
 template <class T>
