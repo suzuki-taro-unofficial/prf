@@ -65,6 +65,8 @@ public:
   void refresh(ID transaction_id) override;
 
   void finalize(Transaction *transaction) override;
+
+  template <class U> friend class StreamLoop;
 };
 
 template <class T> class Cell;
@@ -82,9 +84,10 @@ public:
   Stream<typename std::invoke_result<F, T &>::type> map(F f) {
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<U>(ID)> updater = [this, f](ID transaction_id) {
+    std::function<std::optional<U>(ID)> updater = [internal = this->internal,
+                                                   f](ID transaction_id) {
       std::optional<std::shared_ptr<T>> value =
-          this->internal->sample(transaction_id);
+          internal->sample(transaction_id);
       assert(value &&
              "mapメソッドでトランザクションに対応する値がありませんでした");
       return f(**value);
@@ -107,9 +110,9 @@ public:
                                                                   F f) {
     using V = typename std::invoke_result<F, T &, U &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<V>(ID)> updater = [this, c,
+    std::function<std::optional<V>(ID)> updater = [internal = this->internal, c,
                                                    f](ID transaction_id) {
-      std::shared_ptr<T> v1 = this->internal->unsafeSample(transaction_id);
+      std::shared_ptr<T> v1 = internal->unsafeSample(transaction_id);
       std::shared_ptr<U> v2 = c.internal->unsafeSample(transaction_id);
       return f(*v1, *v2);
     };
@@ -249,8 +252,9 @@ template <class T>
 template <class F>
 Stream<T> Stream<T>::merge(Stream<T> s2, F f) {
   ID cluster_id = clusterManager.current_id();
-  std::function<std::optional<T>(ID)> updater = [this, s2, f](ID id) -> T {
-    std::optional<std::shared_ptr<T>> v1 = this->internal->sample(id);
+  std::function<std::optional<T>(ID)> updater = [internal = this->internal, s2,
+                                                 f](ID id) -> T {
+    std::optional<std::shared_ptr<T>> v1 = internal->sample(id);
     std::optional<std::shared_ptr<T>> v2 = s2.internal->sample(id);
     if (v1 and v2) {
       return f(**v1, **v2);
@@ -272,8 +276,9 @@ template <class T> Stream<T> Stream<T>::orElse(Stream<T> s2) {
 
 template <class T> Cell<T> Stream<T>::hold(T initial_value) {
   ID cluster_id = clusterManager.current_id();
-  std::function<std::optional<T>(ID)> updater = [this](ID id) -> T {
-    std::shared_ptr<T> res = this->internal->unsafeSample(id);
+  std::function<std::optional<T>(ID)> updater =
+      [internal = this->internal](ID id) -> T {
+    std::shared_ptr<T> res = internal->unsafeSample(id);
     return *res;
   };
   CellInternal<T> *inter =
@@ -284,9 +289,9 @@ template <class T> Cell<T> Stream<T>::hold(T initial_value) {
 
 template <class T> template <class F> Stream<T> Stream<T>::filter(F f) {
   ID cluster_id = clusterManager.current_id();
-  std::function<std::optional<T>(ID)> updater = [this,
+  std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  f](ID id) -> std::optional<T> {
-    std::shared_ptr<T> res = this->internal->unsafeSample(id);
+    std::shared_ptr<T> res = internal->unsafeSample(id);
     if (f(*res)) {
       return *res;
     }
@@ -313,15 +318,17 @@ template <class T> Stream<T> filterOptional(Stream<std::optional<T>> s) {
 
 template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) {
   ID cluster_id = clusterManager.current_id();
-  std::function<std::optional<T>(ID)> updater = [this,
+  std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  c](ID id) -> std::optional<T> {
     if (not *c.internal->unsafeSample(id)) {
       return std::nullopt;
     }
-    return *this->internal->unsafeSample(id);
+    return *internal->unsafeSample(id);
   };
   StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
   inter->listen(this->internal);
+  // gateはCellの値が変化したときに動くものでは無いので child_to()
+  // を呼び出す
   inter->child_to(c.internal);
   return Stream<T>(inter);
 }
@@ -343,14 +350,13 @@ template <class T> void StreamLoop<T>::loop(Stream<T> s) {
   this->looped = true;
 
   ID cluster_id = clusterManager.current_id();
-  std::function<T(ID)> updater = [this, s](ID transaction_id) {
+  std::function<T(ID)> updater = [s](ID transaction_id) {
     std::shared_ptr<T> res = s.internal->unsafeSample(transaction_id);
     return *res;
   };
-  StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
-  inter->listen_over_loop(s.internal);
-  // 強引にinternalを書き変えている(C++で綺麗に実装するのは諦める)
-  this->internal = inter;
+  // 強引にupdaterを置き変えているがC++で綺麗なコードを書くことは諦める
+  this->internal->updater = updater;
+  this->internal->listen_over_loop(s.internal);
 }
 
 } // namespace prf

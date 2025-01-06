@@ -70,6 +70,8 @@ public:
   void refresh(ID transaction_id) override;
 
   void finalize(Transaction *transaction) override;
+
+  template <class U> friend class CellLoop;
 };
 
 template <class T> class CellLoop;
@@ -81,7 +83,7 @@ protected:
   /**
    * CellLoopで利用される初期値を与えずにインスタンスを生成するもの
    */
-  Cell();
+  Cell(ID);
 
 public:
   Cell(CellInternal<T> *internal);
@@ -94,8 +96,9 @@ public:
   template <class F> Cell<typename std::invoke_result<F, T &>::type> map(F f) {
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<U(ID)> updater = [this, f](ID transaction_id) -> U {
-      std::shared_ptr<T> value = this->internal->unsafeSample(transaction_id);
+    std::function<U(ID)> updater = [internal = this->internal,
+                                    f](ID transaction_id) -> U {
+      std::shared_ptr<T> value = internal->unsafeSample(transaction_id);
       return f(*value);
     };
     CellInternal<U> *inter = new CellInternal<U>(cluster_id, updater);
@@ -263,9 +266,13 @@ template <class T> void CellSink<T>::send(T value) {
   this->internal->send(value);
 }
 
-template <class T> Cell<T>::Cell() : internal(nullptr) {}
+template <class T>
+Cell<T>::Cell(ID cluster_id)
+    : internal(new CellInternal<T>(cluster_id,
+                                   std::function<std::optional<T>(ID)>())) {}
 
-template <class T> CellLoop<T>::CellLoop() : Cell<T>() {}
+template <class T>
+CellLoop<T>::CellLoop() : Cell<T>(clusterManager.current_id()) {}
 
 template <class T> void CellLoop<T>::loop(Cell<T> c) {
   assert(not this->looped &&
@@ -273,12 +280,12 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 
   this->looped = true;
   ID cluster_id = clusterManager.current_id();
-  std::function<T(ID)> updater = [this, c](ID transaction_id) {
+  std::function<T(ID)> updater = [c](ID transaction_id) {
     return *c.internal->unsafeSample(transaction_id);
   };
-  CellInternal<T> *inter = new CellInternal<T>(cluster_id, updater);
-  inter->listen_over_loop(c.internal);
-  this->internal = inter;
+  // 強引にupdaterを置き変えているがC++で綺麗なコードを書くことは諦める
+  this->internal->updater = updater;
+  this->internal->listen_over_loop(c.internal);
 }
 
 template <class T>
@@ -288,10 +295,10 @@ Cell<typename std::invoke_result<F, T &, U &>::type> Cell<T>::lift(Cell<U> c2,
   using V = typename std::invoke_result<F, T &, U &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
-      [this, c2, f](ID transaction_id) -> std::optional<V> {
+      [internal = this->internal, c2,
+       f](ID transaction_id) -> std::optional<V> {
     // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
-    std::optional<std::shared_ptr<T>> v1 =
-        this->internal->sample(transaction_id);
+    std::optional<std::shared_ptr<T>> v1 = internal->sample(transaction_id);
     if (not v1) {
       return std::nullopt;
     }
