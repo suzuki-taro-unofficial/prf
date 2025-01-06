@@ -14,6 +14,10 @@ void build() {
   PlannerManager::initialize(ranks);
 }
 
+/**
+ * 現在のPRFに登録されたリソースを初期化するための関数
+ * テストで複数の依存グラフを記述するときを想定したものなので、それ以外では使わないでください
+ */
 void initialize() {
   // メモリリークは一旦考えない方向で
   NodeManager::globalNodeManager = new NodeManager;
