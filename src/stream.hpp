@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cell.hpp"
 #include "cluster.hpp"
 #include "logger.hpp"
 #include "time_invariant_values.hpp"
@@ -57,6 +58,7 @@ public:
   void finalize(Transaction *transaction) override;
 };
 
+template <class T> class Cell;
 template <class T> class StreamLoop;
 
 template <class T> class Stream {
@@ -88,6 +90,8 @@ public:
   template <class F> Stream<T> merge(Stream<T> s2, F f);
 
   Stream<T> orElse(Stream<T> s2);
+
+  Cell<T> hold(T initial_value);
 
   friend StreamLoop<T>;
 };
@@ -222,6 +226,19 @@ Stream<T> Stream<T>::merge(Stream<T> s2, F f) {
 
 template <class T> Stream<T> Stream<T>::orElse(Stream<T> s2) {
   return this->merge(s2, [](T x, T y) -> T { return x; });
+}
+
+template <class T> Cell<T> Stream<T>::hold(T initial_value) {
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<T>(ID)> updater = [this](ID id) -> T {
+    std::optional<std::shared_ptr<T>> res = this->internal->sample(id);
+    assert(res && "トランザクションに対応する値が存在しませんでした");
+    return **res;
+  };
+  CellInternal<T> *inter =
+      new CellInternal<T>(cluster_id, initial_value, updater);
+  inter->listen(this->internal);
+  return Cell<T>(inter);
 }
 
 template <class T>

@@ -38,6 +38,9 @@ public:
   CellInternal<T>(ID cluster_id,
                   std::function<std::optional<T>(ID transaction_id)> updater);
 
+  CellInternal<T>(ID cluster_id, T initial_value,
+                  std::function<std::optional<T>(ID transaction_id)> updater);
+
   CellInternal<T>(ID cluster_id, T initial_value);
 
   // transaction以前(現在実行中のトランザクションを含めた)に生成された値を取得する
@@ -122,6 +125,18 @@ template <class T>
 CellInternal<T>::CellInternal(
     ID cluster_id, std::function<std::optional<T>(ID transaction_id)> updater)
     : TimeInvariantValues(cluster_id), updater(updater){};
+
+template <class T>
+CellInternal<T>::CellInternal(
+    ID cluster_id, T initial_value,
+    std::function<std::optional<T>(ID transaction_id)> updater)
+    : TimeInvariantValues(cluster_id), updater(updater) {
+  // 初期値はEecutorの初期化処理に含める
+  Executor::after_build_hooks.push_back(
+      [this, initial_value](Transaction *transaction) -> void {
+        this->send(initial_value);
+      });
+}
 
 template <class T>
 CellInternal<T>::CellInternal(ID cluster_id, T initial_value)
