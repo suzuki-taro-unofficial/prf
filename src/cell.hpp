@@ -287,7 +287,8 @@ Cell<typename std::invoke_result<F, T &, U &>::type> Cell<T>::lift(Cell<U> c2,
                                                                    F f) {
   using V = typename std::invoke_result<F, T &, U &>::type;
   ID cluster_id = clusterManager.current_id();
-  std::function<V(ID)> updater = [this, c2, f](ID transaction_id) -> V {
+  std::function<std::optional<V>(ID)> updater =
+      [this, c2, f](ID transaction_id) -> std::optional<V> {
     // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
     std::optional<std::shared_ptr<T>> v1 =
         this->internal->sample(transaction_id);
