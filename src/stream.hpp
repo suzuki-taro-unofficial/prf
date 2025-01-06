@@ -38,8 +38,17 @@ public:
                     std::function<std::optional<T>(ID transaction_id)> updater);
 
   StreamInternal<T>(ID cluster_id);
-  // transaction以前(現在実行中のトランザクションを含めた)に生成された値を取得する
+  /**
+   * トランザクションに対応する値を取得する
+   * 存在しなかった場合は std::nullopt を返す
+   */
   std::optional<std::shared_ptr<T>> sample(ID transaction_id);
+
+  /**
+   * sample() と違いその論理時刻に値が存在することが保証される場合に呼び出す
+   * 無い時はassertのエラーで終了する
+   */
+  std::shared_ptr<T> unsafeSample(ID transaction_id);
 
   /**
    * FRPの外からlistenする
@@ -164,6 +173,13 @@ std::optional<std::shared_ptr<T>> StreamInternal<T>::sample(ID transaction_id) {
 }
 
 template <class T>
+std::shared_ptr<T> StreamInternal<T>::unsafeSample(ID transaction_id) {
+  std::optional<std ::shared_ptr<T>> res = this->sample(transaction_id);
+  assert(res && "論理時刻に対応する値がStreamに存在しませんでした");
+  return *res;
+}
+
+template <class T>
 void StreamInternal<T>::listenFromOuter(
     std::function<void(std::shared_ptr<T>)> f) {
   listeners.push_back(f);
@@ -186,7 +202,7 @@ template <class T> void StreamInternal<T>::refresh(ID transaction_id) {
 }
 
 template <class T> void StreamInternal<T>::finalize(Transaction *transaction) {
-  std::shared_ptr<T> value = *this->sample(transaction->get_id());
+  std::shared_ptr<T> value = this->unsafeSample(transaction->get_id());
   for (std::function<void(std::shared_ptr<T>)> &listener : listeners) {
     listener(value);
   }
@@ -231,9 +247,8 @@ template <class T> Stream<T> Stream<T>::orElse(Stream<T> s2) {
 template <class T> Cell<T> Stream<T>::hold(T initial_value) {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [this](ID id) -> T {
-    std::optional<std::shared_ptr<T>> res = this->internal->sample(id);
-    assert(res && "トランザクションに対応する値が存在しませんでした");
-    return **res;
+    std::shared_ptr<T> res = this->internal->unsafeSample(id);
+    return *res;
   };
   CellInternal<T> *inter =
       new CellInternal<T>(cluster_id, initial_value, updater);
@@ -259,9 +274,8 @@ template <class T> void StreamLoop<T>::loop(Stream<T> s) {
 
   ID cluster_id = clusterManager.current_id();
   std::function<T(ID)> updater = [this, s](ID transaction_id) {
-    std::optional<std::shared_ptr<T>> res = s.internal->sample(transaction_id);
-    assert(res && "クラスタに対応する値が存在しませんでした");
-    return **res;
+    std::shared_ptr<T> res = s.internal->unsafeSample(transaction_id);
+    return *res;
   };
   StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
   inter->listen_over_loop(s.internal);

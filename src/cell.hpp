@@ -43,9 +43,17 @@ public:
 
   CellInternal<T>(ID cluster_id, T initial_value);
 
-  // transaction以前(現在実行中のトランザクションを含めた)に生成された値を取得する
-  // Streamと違いCellは値が常に存在するのでoptionalで包まれない
-  std::shared_ptr<T> sample(ID transaction_id);
+  /**
+   * transaction以前(現在実行中のトランザクションを含めた)に生成された値を取得する
+   * 存在しなかった場合は std::nullopt を返す
+   */
+  std::optional<std::shared_ptr<T>> sample(ID transaction_id);
+
+  /**
+   * sample() と違いその論理時刻に値が存在することが保証される場合に呼び出す
+   * 無い時はassertのエラーで終了する
+   */
+  std::shared_ptr<T> unsafeSample(ID transaction_id);
 
   /**
    * FRPの外からlistenする
@@ -87,7 +95,7 @@ public:
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<U(ID)> updater = [this, f](ID transaction_id) -> U {
-      std::shared_ptr<T> value = this->internal->sample(transaction_id);
+      std::shared_ptr<T> value = this->internal->unsafeSample(transaction_id);
       return f(*value);
     };
     CellInternal<U> *inter = new CellInternal<U>(cluster_id, updater);
@@ -174,14 +182,22 @@ void CellInternal<T>::send(T value, Transaction *transaction) {
 }
 
 template <class T>
-std::shared_ptr<T> CellInternal<T>::sample(ID transaction_id) {
+std::optional<std::shared_ptr<T>> CellInternal<T>::sample(ID transaction_id) {
   std::lock_guard<std::mutex> lock(mtx);
   // Cellは複数の論理時間に渡って値が存在するので、指定したトランザクション以前を探すことになる
   auto itr = values.upper_bound(transaction_id);
-  assert(itr != values.begin() &&
-         "指定された論理時間でCellに値が存在しませんでした");
+  if (itr == values.begin()) {
+    return std::nullopt;
+  }
   --itr;
   return itr->second;
+}
+
+template <class T>
+std::shared_ptr<T> CellInternal<T>::unsafeSample(ID transaction_id) {
+  std::optional<std::shared_ptr<T>> res = this->sample(transaction_id);
+  assert(res && "論理時刻に対応する値がStreamに存在しませんでした");
+  return *res;
 }
 
 template <class T>
@@ -215,7 +231,7 @@ template <class T> void CellInternal<T>::refresh(ID transaction_id) {
 }
 
 template <class T> void CellInternal<T>::finalize(Transaction *transaction) {
-  std::shared_ptr<T> value = this->sample(transaction->get_id());
+  std::shared_ptr<T> value = this->unsafeSample(transaction->get_id());
   for (std::function<void(std::shared_ptr<T>)> &listener : listeners) {
     listener(value);
   }
@@ -253,7 +269,7 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
   this->looped = true;
   ID cluster_id = clusterManager.current_id();
   std::function<T(ID)> updater = [this, c](ID transaction_id) {
-    return *c.internal->sample(transaction_id);
+    return *c.internal->unsafeSample(transaction_id);
   };
   CellInternal<T> *inter = new CellInternal<T>(cluster_id, updater);
   inter->listen_over_loop(c.internal);
