@@ -61,9 +61,16 @@ public:
   void finalize(Transaction *transaction) override;
 };
 
+template <class T> class CellLoop;
+
 template <class T> class Cell {
 protected:
   CellInternal<T> *internal;
+
+  /**
+   * CellLoopで利用される初期値を与えずにインスタンスを生成するもの
+   */
+  Cell();
 
 public:
   Cell(CellInternal<T> *internal);
@@ -86,6 +93,8 @@ public:
   }
 
   template <class F> void listen(F f);
+
+  friend CellLoop<T>;
 };
 
 template <class T> class CellSink : public Cell<T> {
@@ -104,7 +113,9 @@ template <class T> class CellLoop : public Cell<T> {
   bool looped;
 
 public:
-  CellLoop(Cell<T> s);
+  CellLoop();
+
+  void loop(Cell<T> c);
 };
 
 template <class T>
@@ -216,13 +227,21 @@ template <class T> void CellSink<T>::send(T value) {
   this->internal->send(value);
 }
 
-template <class T> CellLoop<T>::CellLoop(Cell<T> c) {
+template <class T> Cell<T>::Cell() : internal(nullptr) {}
+
+template <class T> CellLoop<T>::CellLoop() : Cell<T>() {}
+
+template <class T> void CellLoop<T>::loop(Cell<T> c) {
+  assert(not this->looped &&
+         "CellLoopに対して複数回loopメソッドを呼び出しています");
+
+  this->looped = true;
   ID cluster_id = clusterManager.current_id();
   std::function<T(ID)> updater = [this, c](ID transaction_id) {
-    return c.internal->sample(transaction_id);
+    return *c.internal->sample(transaction_id);
   };
   CellInternal<T> *inter = new CellInternal<T>(cluster_id, updater);
-  inter->listen_over_loop(this);
+  inter->listen_over_loop(c.internal);
   this->internal = inter;
 }
 

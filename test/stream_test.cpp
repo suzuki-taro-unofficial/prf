@@ -122,9 +122,31 @@ void test_4() {
   assert(r4 == "124816" && "mapで引数をT&で受け取れる");
 }
 
+void test_5() {
+  prf::StreamSink<int> s1;
+  prf::StreamLoop<int> s2;
+  prf::Stream<int> s3 = s1.map([](int n) -> int { return n * n; });
+  s2.loop(s3);
+  prf::Stream<int> s4 = s2.map([](int n) -> int { return n + 1; });
+  int sum = 0;
+  s4.listen([&sum](int n) -> void { sum += n; });
+
+  prf::build();
+
+  s1.send(1);
+  assert(sum == 2 && "StreamLoopが正しく動作している");
+
+  s1.send(2);
+  assert(sum == 7 && "StreamLoopが正しく動作している");
+
+  s1.send(3);
+  assert(sum == 17 && "StreamLoopが正しく動作している");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
   run_test(test_3);
   run_test(test_4);
+  run_test(test_5);
 }

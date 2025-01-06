@@ -57,6 +57,8 @@ public:
   void finalize(Transaction *transaction) override;
 };
 
+template <class T> class StreamLoop;
+
 template <class T> class Stream {
 protected:
   StreamInternal<T> *internal;
@@ -82,6 +84,8 @@ public:
   }
 
   template <class F> void listen(F f);
+
+  friend StreamLoop<T>;
 };
 
 template <class T> class StreamSink : public Stream<T> {
@@ -100,7 +104,9 @@ private:
   bool looped;
 
 public:
-  StreamLoop(Stream<T> s);
+  StreamLoop();
+
+  void loop(Stream<T> s);
 };
 
 // Stream
@@ -198,14 +204,23 @@ template <class T> void StreamSink<T>::send(T value) {
   this->internal->send(value);
 }
 
-template <class T> StreamLoop<T>::StreamLoop(Stream<T> s) {
+template <class T> StreamLoop<T>::StreamLoop() : Stream<T>() {}
+
+template <class T> void StreamLoop<T>::loop(Stream<T> s) {
+  assert(not this->looped &&
+         "StreamLoopに対して複数回loopメソッドを呼び出しています");
+  this->looped = true;
+
   ID cluster_id = clusterManager.current_id();
   std::function<T(ID)> updater = [this, s](ID transaction_id) {
-    return *s.internal->sample(transaction_id);
+    std::optional<std::shared_ptr<T>> res = s.internal->sample(transaction_id);
+    assert(res && "クラスタに対応する値が存在しませんでした");
+    return **res;
   };
   StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
-  inter->listen_over_loop(this);
+  inter->listen_over_loop(s.internal);
   // 強引にinternalを書き変えている(C++で綺麗に実装するのは諦める)
   this->internal = inter;
 }
+
 } // namespace prf
