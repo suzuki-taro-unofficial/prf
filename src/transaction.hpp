@@ -27,6 +27,11 @@ struct ExecuteResult {
    * トランザクションが終了時に不要な値の破棄が必要な時変値の集合
    */
   std::set<TimeInvariantValues *> cleanups;
+
+  /**
+   * トランザクションが終了時に不要な値の破棄が必要な時変値の集合
+   */
+  std::vector<std::function<void(ID)>> before_update_hooks;
 };
 
 class Transaction {
@@ -71,6 +76,8 @@ private:
    */
   std::set<TimeInvariantValues *> cleanups;
 
+  std::vector<std::function<void(ID)>> before_update_hooks;
+
   /**
    * 更新処理を開始する
    */
@@ -102,6 +109,11 @@ public:
    * 後処理の必要な時変値を登録する
    */
   void register_cleanup(TimeInvariantValues *tiv);
+
+  /**
+   * トランザクション開始前に呼び出す必要のある関数を登録する
+   */
+  void register_before_update_hook(std::function<void(ID)>);
 
   /**
    * 子トランザクションの実行結果を親トランザクションに登録する

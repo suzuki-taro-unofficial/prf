@@ -40,5 +40,9 @@ void TimeInvariantValues::child_to(TimeInvariantValues *to) {
   to->node->link_to(this->node);
 }
 
+void TimeInvariantValues::global_listen(TimeInvariantValues *to) {
+  to->listners.push_back(this);
+}
+
 void TimeInvariantValues::finalize(Transaction *transaction) {}
 } // namespace prf

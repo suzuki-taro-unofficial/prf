@@ -4,6 +4,7 @@
 #include "planner.hpp"
 #include "thread.hpp"
 #include "time_invariant_values.hpp"
+#include "transaction.hpp"
 #include <mutex>
 #include <thread>
 #include <variant>
@@ -53,6 +54,12 @@ void Executor::start_loop() {
       ID transaction_id = temsg->transaction->get_id();
 
       info_log("新しいトランザクションが開始しました ID: %ld", transaction_id);
+
+      // 更新開始前に登録されているhookを実行する
+      for (auto hook : this->before_update_hooks) {
+        hook(transaction_id);
+      }
+      this->before_update_hooks.clear();
 
       this->transactions[transaction_id] = temsg;
 
@@ -106,9 +113,17 @@ void Executor::start_loop() {
         PlannerManager::messages.push(utmsg);
       }
 
+      // current_transactionをsubtransactionに設定してから更新する
+      current_transaction = subtransaction;
       // 更新は取り敢えずこのスレッド上で行なう
       ExecuteResult result = subtransaction->execute();
+      current_transaction = nullptr;
+
       std::set<ID> futures = transaction->register_execution_result(result);
+
+      for (auto hook : result.before_update_hooks) {
+        this->before_update_hooks_buffers[transaction_id].push_back(hook);
+      }
 
       {
         // 更新の終了を通知
@@ -147,6 +162,11 @@ void Executor::start_loop() {
 
       this->transactions.erase(transaction_id);
       this->transaction_updatings.erase(transaction_id);
+
+      for (auto hook : this->before_update_hooks_buffers[transaction_id]) {
+        this->before_update_hooks.push_back(hook);
+      }
+      this->before_update_hooks_buffers.erase(transaction_id);
 
       {
         // トランザクションの終了をPlannerに通知

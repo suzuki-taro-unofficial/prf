@@ -68,6 +68,10 @@ void Transaction::register_cleanup(TimeInvariantValues *tiv) {
   cleanups.insert(tiv);
 }
 
+void Transaction::register_before_update_hook(std::function<void(ID)> hook) {
+  this->before_update_hooks.push_back(hook);
+}
+
 ExecuteResult Transaction::execute() {
   while (not executor.empty()) {
     auto entry = executor.top();
@@ -79,6 +83,7 @@ ExecuteResult Transaction::execute() {
   ExecuteResult result;
   result.cleanups = this->cleanups;
   result.targets = targets_outside_current_cluster;
+  result.before_update_hooks = this->before_update_hooks;
   return result;
 }
 

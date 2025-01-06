@@ -51,5 +51,10 @@ public:
    * 引数の時変値に更新があったときに連動して更新はされないが、子要素ではあるようにする
    */
   void child_to(TimeInvariantValues *to);
+
+  /**
+   * 依存関係は作らず更新があったときに連動して更新されるようにする
+   */
+  void global_listen(TimeInvariantValues *to);
 };
 } // namespace prf

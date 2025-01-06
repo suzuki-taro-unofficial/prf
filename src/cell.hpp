@@ -72,6 +72,7 @@ public:
   void finalize(Transaction *transaction) override;
 
   template <class U> friend class CellLoop;
+  template <class U> friend class GlobalCellLoop;
 };
 
 template <class T> class CellLoop;
@@ -114,6 +115,7 @@ public:
   friend CellLoop<T>;
   template <class U> friend class Stream;
   template <class U> friend class Cell;
+  template <class U> friend class GlobalCellLoop;
 };
 
 template <class T> class CellSink : public Cell<T> {
@@ -133,6 +135,18 @@ template <class T> class CellLoop : public Cell<T> {
 
 public:
   CellLoop();
+
+  void loop(Cell<T> c);
+};
+
+template <class T> class GlobalCellLoop : public Cell<T> {
+  /**
+   * 既にLoopしているか否か
+   */
+  bool looped;
+
+public:
+  GlobalCellLoop();
 
   void loop(Cell<T> c);
 };
@@ -312,6 +326,31 @@ Cell<typename std::invoke_result<F, T &, U &>::type> Cell<T>::lift(Cell<U> c2,
   inter->listen(this->internal);
   inter->listen(c2.internal);
   return Cell<V>(inter);
+}
+
+template <class T>
+GlobalCellLoop<T>::GlobalCellLoop() : Cell<T>(clusterManager.current_id()) {}
+
+template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
+  assert(not this->looped &&
+         "GlobalCellLoopに対して複数回loopメソッドを呼び出しています");
+
+  this->looped = true;
+  // 本来の用途を逸脱するが、設計の妥協としておく
+  std::function<std::optional<T>(ID)> updater = [internal = this->internal,
+                                                 c](ID id) {
+    assert(current_transaction != nullptr &&
+           "トランザクションの外でlistenしています");
+    T res = *c.internal->unsafeSample(id);
+    current_transaction->register_before_update_hook(
+        [internal, res](ID id) -> void {
+          std::lock_guard<std::mutex> lock(internal->mtx);
+          internal->values[id] = std::make_shared<T>(res);
+        });
+    return std::nullopt;
+  };
+  this->internal->global_listen(c.internal);
+  this->internal->updater = updater;
 }
 
 } // namespace prf

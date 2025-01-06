@@ -84,6 +84,11 @@ private:
    */
   std::map<ID, std::set<ID>> transaction_updatings;
 
+  std::map<ID, std::vector<std::function<void(ID)>>>
+      before_update_hooks_buffers;
+
+  std::vector<std::function<void(ID)>> before_update_hooks;
+
   static void invoke_after_build_hooks();
 
 public:

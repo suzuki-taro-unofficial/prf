@@ -1,5 +1,7 @@
 #include "cell.hpp"
+#include "cluster.hpp"
 #include "prf.hpp"
+#include "stream.hpp"
 #include "string"
 #include "transaction.hpp"
 #include <cassert>
@@ -85,8 +87,35 @@ void test_3() {
   assert(acc == "ACZETO" && "liftプリミティブが正しく動作している");
 }
 
+void test_4() {
+  prf::GlobalCellLoop<int> cg;
+
+  // Clusterはクラスターを越えても動く
+  prf::Cluster *cluster = new prf::Cluster();
+  prf::StreamSink<int> s1;
+  prf::Stream<int> s2 =
+      s1.snapshot(cg, [](int n, int m) -> int { return n + m; });
+  cg.loop(s2.hold(0));
+  delete cluster;
+
+  prf::build();
+
+  int sum = 0;
+  s2.listen([&sum](int n) -> void { sum += n; });
+
+  s1.send(1);
+  assert(sum == 1 && "GlobalCellLoopが正しく動作している");
+
+  s1.send(2);
+  assert(sum == 4 && "GlobalCellLoopが正しく動作している");
+
+  s1.send(3);
+  assert(sum == 10 && "GlobalCellLoopが正しく動作している");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
   run_test(test_3);
+  run_test(test_4);
 }
