@@ -121,8 +121,12 @@ public:
     return Stream<V>(inter);
   }
 
+  template <class F> Stream<T> filter(F f);
+
   friend StreamLoop<T>;
   template <class U> friend class Cell;
+
+  template <class U> friend Stream<U> filterOptional(Stream<std::optional<U>>);
 };
 
 template <class T> class StreamSink : public Stream<T> {
@@ -274,6 +278,35 @@ template <class T> Cell<T> Stream<T>::hold(T initial_value) {
       new CellInternal<T>(cluster_id, initial_value, updater);
   inter->listen(this->internal);
   return Cell<T>(inter);
+}
+
+template <class T> template <class F> Stream<T> Stream<T>::filter(F f) {
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<T>(ID)> updater = [this,
+                                                 f](ID id) -> std::optional<T> {
+    std::shared_ptr<T> res = this->internal->unsafeSample(id);
+    if (f(*res)) {
+      return *res;
+    }
+    return std::nullopt;
+  };
+  StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
+  inter->listen(this->internal);
+  return Stream<T>(inter);
+}
+
+template <class T> Stream<T> filterOptional(Stream<std::optional<T>> s) {
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<T>(ID)> updater = [s](ID id) -> std::optional<T> {
+    std::shared_ptr<std::optional<T>> res = s.internal->unsafeSample(id);
+    if (res->has_value()) {
+      return **res;
+    }
+    return std::nullopt;
+  };
+  StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
+  inter->listen(s.internal);
+  return Stream<T>(inter);
 }
 
 template <class T>

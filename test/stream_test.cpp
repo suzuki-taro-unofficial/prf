@@ -210,6 +210,60 @@ void test_7() {
   assert(sum2 == 40 && "両方が発火しているときにorElseが正しく動いている");
 }
 
+void test_8() {
+  prf::StreamSink<int> s;
+
+  int acc = 0;
+  s.filter([](int n) -> bool {
+     return n % 2 == 1;
+   }).listen([&acc](int n) -> void { acc += n; });
+
+  prf::build();
+
+  s.send(1);
+  assert(acc == 1 && "filterが正しく動作している");
+
+  s.send(2);
+  assert(acc == 1 && "filterが正しく動作している");
+
+  s.send(3);
+  assert(acc == 4 && "filterが正しく動作している");
+
+  s.send(4);
+  assert(acc == 4 && "filterが正しく動作している");
+
+  s.send(5);
+  assert(acc == 9 && "filterが正しく動作している");
+}
+
+void test_9() {
+  prf::StreamSink<std::optional<int>> s;
+
+  int sum = 0;
+
+  prf::filterOptional(s).listen([&sum](int n) -> void { sum += n; });
+
+  prf::build();
+
+  s.send(std::nullopt);
+  assert(sum == 0 && "filterOptionalが正しく動作している");
+
+  s.send(1);
+  assert(sum == 1 && "filterOptionalが正しく動作している");
+
+  s.send(std::nullopt);
+  assert(sum == 1 && "filterOptionalが正しく動作している");
+
+  s.send(2);
+  assert(sum == 3 && "filterOptionalが正しく動作している");
+
+  s.send(std::nullopt);
+  assert(sum == 3 && "filterOptionalが正しく動作している");
+
+  s.send(3);
+  assert(sum == 6 && "filterOptionalが正しく動作している");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
@@ -218,4 +272,6 @@ int main() {
   run_test(test_5);
   run_test(test_6);
   run_test(test_7);
+  run_test(test_8);
+  run_test(test_9);
 }
