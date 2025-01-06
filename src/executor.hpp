@@ -84,6 +84,8 @@ private:
    */
   std::map<ID, std::set<ID>> transaction_updatings;
 
+  static void invoke_after_build_hooks();
+
 public:
   /**
    * Executorが起動していない場合に起動する
@@ -101,5 +103,10 @@ public:
   static ConcurrentQueue<ExecutorMessage> messages;
   static Executor *global_executor;
   static std::mutex executor_mutex;
+
+  /**
+   * PRFのセットアップが終了したあとに呼び出す関数のリスト
+   */
+  static std::vector<std::function<void(Transaction *)>> after_build_hooks;
 };
 } // namespace prf

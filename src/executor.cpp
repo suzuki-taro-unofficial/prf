@@ -34,6 +34,7 @@ void Executor::initialize() {
     });
     // 一度起動したらそのまま放置(異常時の対処は一旦放置)
     t.detach();
+    Executor::invoke_after_build_hooks();
   }
 }
 
@@ -158,6 +159,17 @@ void Executor::start_loop() {
   }
   info_log("Executorの実行を停止します");
 }
+
+void Executor::invoke_after_build_hooks() {
+  Transaction transaction;
+  for (auto &hook : after_build_hooks) {
+    hook(&transaction);
+  }
+  after_build_hooks.clear();
+}
+
+std::vector<std::function<void(Transaction *)>> Executor::after_build_hooks =
+    std::vector<std::function<void(Transaction *)>>();
 
 ConcurrentQueue<ExecutorMessage> Executor::messages;
 Executor *Executor::global_executor = nullptr;

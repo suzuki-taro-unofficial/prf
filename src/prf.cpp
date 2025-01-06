@@ -10,8 +10,8 @@ void build() {
   NodeManager::globalNodeManager->build();
   std::vector<Rank> ranks = NodeManager::globalNodeManager->get_cluster_ranks();
 
-  Executor::initialize();
   PlannerManager::initialize(ranks);
+  Executor::initialize();
 }
 
 /**

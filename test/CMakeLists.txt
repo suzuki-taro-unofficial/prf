@@ -15,3 +15,7 @@ add_test(run_concurrent_queue_test concurrent_queue_test)
 add_executable(stream_test stream_test.cpp)
 target_link_libraries(stream_test prf)
 add_test(run_stream_test stream_test)
+
+add_executable(cell_test cell_test.cpp)
+target_link_libraries(cell_test prf)
+add_test(run_cell_test cell_test)
