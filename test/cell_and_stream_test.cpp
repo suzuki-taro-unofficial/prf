@@ -75,7 +75,46 @@ void test_2() {
   assert(acc == "BCAXYZR" && "snapshotプリミティブが正しく動作している");
 }
 
+void test_3() {
+  prf::StreamSink<int> s;
+  prf::CellSink<bool> c(true);
+
+  int sum = 0;
+  s.gate(c).listen([&sum](int n) -> void { sum += n; });
+
+  prf::build();
+
+  s.send(1);
+  assert(sum == 1 && "gateが正しく動作している");
+
+  s.send(2);
+  assert(sum == 3 && "gateが正しく動作している");
+
+  c.send(false);
+  s.send(3);
+  assert(sum == 3 && "gateが正しく動作している");
+
+  c.send(true);
+  s.send(4);
+  assert(sum == 7 && "gateが正しく動作している");
+
+  {
+    prf::Transaction trans;
+    c.send(false);
+    s.send(5);
+  }
+  assert(sum == 7 && "gateが正しく動作している");
+
+  {
+    prf::Transaction trans;
+    c.send(true);
+    s.send(6);
+  }
+  assert(sum == 13 && "gateが正しく動作している");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
+  run_test(test_3);
 }

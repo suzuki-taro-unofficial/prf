@@ -123,6 +123,8 @@ public:
 
   template <class F> Stream<T> filter(F f);
 
+  Stream<T> gate(Cell<bool>);
+
   friend StreamLoop<T>;
   template <class U> friend class Cell;
 
@@ -306,6 +308,21 @@ template <class T> Stream<T> filterOptional(Stream<std::optional<T>> s) {
   };
   StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
   inter->listen(s.internal);
+  return Stream<T>(inter);
+}
+
+template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) {
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<T>(ID)> updater = [this,
+                                                 c](ID id) -> std::optional<T> {
+    if (not *c.internal->unsafeSample(id)) {
+      return std::nullopt;
+    }
+    return *this->internal->unsafeSample(id);
+  };
+  StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->child_to(c.internal);
   return Stream<T>(inter);
 }
 
