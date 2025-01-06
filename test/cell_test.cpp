@@ -1,5 +1,8 @@
 #include "cell.hpp"
 #include "prf.hpp"
+#include "string"
+#include "transaction.hpp"
+#include <cassert>
 
 // リソースの初期化をしてテストを実行後、バックグラウンドのスレッドを停止する
 #define run_test(func)                                                         \
@@ -50,7 +53,40 @@ void test_2() {
   assert(sum == 118 && "CellLoopが正しく動作している");
 }
 
+void test_3() {
+  prf::CellSink<int> c1(0);
+  prf::CellSink<std::string> c2("ABC");
+  prf::Cell<char> c3 = c1.lift(
+      c2, [](int index, std::string str) -> char { return str[index]; });
+
+  std::string acc = "";
+  c3.listen([&acc](char c) -> void { acc += c; });
+
+  prf::build();
+  assert(acc == "A" && "liftプリミティブが正しく動作している");
+
+  c1.send(2);
+  assert(acc == "AC" && "liftプリミティブが正しく動作している");
+
+  c2.send("XYZ");
+  assert(acc == "ACZ" && "liftプリミティブが正しく動作している");
+
+  c2.send("QWERTY");
+  assert(acc == "ACZE" && "liftプリミティブが正しく動作している");
+
+  c1.send(4);
+  assert(acc == "ACZET" && "liftプリミティブが正しく動作している");
+
+  {
+    prf::Transaction trans;
+    c1.send(2);
+    c2.send("DVORAK");
+  }
+  assert(acc == "ACZETO" && "liftプリミティブが正しく動作している");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
+  run_test(test_3);
 }

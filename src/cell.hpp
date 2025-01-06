@@ -105,8 +105,12 @@ public:
 
   template <class F> void listen(F f);
 
+  template <class U, class F>
+  Cell<typename std::invoke_result<F, T &, U &>::type> lift(Cell<U> c2, F f);
+
   friend CellLoop<T>;
   template <class U> friend class Stream;
+  template <class U> friend class Cell;
 };
 
 template <class T> class CellSink : public Cell<T> {
@@ -275,6 +279,23 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
   CellInternal<T> *inter = new CellInternal<T>(cluster_id, updater);
   inter->listen_over_loop(c.internal);
   this->internal = inter;
+}
+
+template <class T>
+template <class U, class F>
+Cell<typename std::invoke_result<F, T &, U &>::type> Cell<T>::lift(Cell<U> c2,
+                                                                   F f) {
+  using V = typename std::invoke_result<F, T &, U &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<V(ID)> updater = [this, c2, f](ID transaction_id) -> V {
+    std::shared_ptr<T> v1 = this->internal->unsafeSample(transaction_id);
+    std::shared_ptr<U> v2 = c2.internal->unsafeSample(transaction_id);
+    return f(*v1, *v2);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c2.internal);
+  return Cell<V>(inter);
 }
 
 } // namespace prf
