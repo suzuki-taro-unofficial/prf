@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <type_traits>
 
 namespace prf {
 // 一瞬だけ値が存在するような時変値を表すクラス
@@ -64,21 +65,23 @@ public:
   Stream(StreamInternal<T> *internal);
   Stream();
 
-  template <class U> Stream<U> map(std::function<U(std::shared_ptr<T>)> f) {
+  template <class F>
+  Stream<typename std::invoke_result<F, T &>::type> map(F f) {
+    using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<U>(ID)> updater = [this, f](ID transaction_id) {
       std::optional<std::shared_ptr<T>> value =
           this->internal->sample(transaction_id);
       assert(value &&
              "mapメソッドでトランザクションに対応する値がありませんでした");
-      return f(*value);
+      return f(**value);
     };
     StreamInternal<U> *inter = new StreamInternal<U>(cluster_id, updater);
     inter->listen(this->internal);
-    return Stream(inter);
+    return Stream<U>(inter);
   }
 
-  void listen(std::function<void(std::shared_ptr<T>)> f);
+  template <class F> void listen(F f);
 };
 
 template <class T> class StreamSink : public Stream<T> {
@@ -94,7 +97,8 @@ private:
   /**
    * 既にLoopしているか否か
    */
-    bool looped;
+  bool looped;
+
 public:
   StreamLoop(Stream<T> s);
 };
@@ -181,9 +185,8 @@ template <class T>
 Stream<T>::Stream()
     : internal(new StreamInternal<T>(clusterManager.current_id())) {}
 
-template <class T>
-void Stream<T>::listen(std::function<void(std::shared_ptr<T>)> f) {
-  this->internal->listenFromOuter(f);
+template <class T> template <class F> void Stream<T>::listen(F f) {
+  this->internal->listenFromOuter([f](std::shared_ptr<T> v) -> void { f(*v); });
 }
 
 template <class T>
