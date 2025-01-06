@@ -102,7 +102,27 @@ public:
 
   Cell<T> hold(T initial_value);
 
+  template <class U, class F>
+  Stream<typename std::invoke_result<F, T &, U &>::type> snapshot(Cell<U> c,
+                                                                  F f) {
+    using V = typename std::invoke_result<F, T &, U &>::type;
+    ID cluster_id = clusterManager.current_id();
+    std::function<std::optional<V>(ID)> updater = [this, c,
+                                                   f](ID transaction_id) {
+      std::shared_ptr<T> v1 = this->internal->unsafeSample(transaction_id);
+      std::shared_ptr<U> v2 = c.internal->unsafeSample(transaction_id);
+      return f(*v1, *v2);
+    };
+    StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
+    inter->listen(this->internal);
+    // snapshotはCellの値が変化したときに動くものでは無いので child_to()
+    // を呼び出す
+    inter->child_to(c.internal);
+    return Stream<V>(inter);
+  }
+
   friend StreamLoop<T>;
+  template <class U> friend class Cell;
 };
 
 template <class T> class StreamSink : public Stream<T> {

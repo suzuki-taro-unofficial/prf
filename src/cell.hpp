@@ -106,6 +106,7 @@ public:
   template <class F> void listen(F f);
 
   friend CellLoop<T>;
+  template <class U> friend class Stream;
 };
 
 template <class T> class CellSink : public Cell<T> {

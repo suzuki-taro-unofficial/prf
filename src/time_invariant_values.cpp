@@ -36,5 +36,9 @@ void TimeInvariantValues::listen_over_loop(TimeInvariantValues *to) {
   to->listners.push_back(this);
 }
 
+void TimeInvariantValues::child_to(TimeInvariantValues *to) {
+  to->node->link_to(this->node);
+}
+
 void TimeInvariantValues::finalize(Transaction *transaction) {}
 } // namespace prf

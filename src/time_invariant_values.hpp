@@ -47,5 +47,9 @@ public:
   void listen(TimeInvariantValues *to);
   // 引数の時変値に更新があったときに連動して更新されるようにする(CellLoopやStreamLoop用)
   void listen_over_loop(TimeInvariantValues *to);
+  /**
+   * 引数の時変値に更新があったときに連動して更新はされないが、子要素ではあるようにする
+   */
+  void child_to(TimeInvariantValues *to);
 };
 } // namespace prf
