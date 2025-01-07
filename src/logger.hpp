@@ -1,7 +1,21 @@
 #include <stdio.h>
 
+#ifdef SHOW_INFO_LOG
 #define info_log(...) LOG_MACRO("INFO", __VA_ARGS__)
-#define warn_log(...) LOG_MACRO("WARN", __VA_ARGS__)
+#else
+#define info_log(...)                                                          \
+  do {                                                                         \
+  } while (false)
+#endif
+
+#ifdef SHOW_WARN_LOG
+#define warn_log(...) LOG_MACRO("INFO", __VA_ARGS__)
+#else
+#define warn_log(...)                                                          \
+  do {                                                                         \
+  } while (false)
+#endif
+
 #define error_log(...) LOG_MACRO("ERROR", __VA_ARGS__)
 #define failure_log(...) LOG_AND_EXIT_MACRO("FAILURE", __VA_ARGS__)
 

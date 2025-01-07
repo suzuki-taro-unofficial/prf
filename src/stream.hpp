@@ -303,17 +303,8 @@ template <class T> template <class F> Stream<T> Stream<T>::filter(F f) {
 }
 
 template <class T> Stream<T> filterOptional(Stream<std::optional<T>> s) {
-  ID cluster_id = clusterManager.current_id();
-  std::function<std::optional<T>(ID)> updater = [s](ID id) -> std::optional<T> {
-    std::shared_ptr<std::optional<T>> res = s.internal->unsafeSample(id);
-    if (res->has_value()) {
-      return **res;
-    }
-    return std::nullopt;
-  };
-  StreamInternal<T> *inter = new StreamInternal<T>(cluster_id, updater);
-  inter->listen(s.internal);
-  return Stream<T>(inter);
+  return s.filter([](std::optional<T> x) -> bool { return x.has_value(); })
+      .map([](std::optional<T> x) -> T { return *x; });
 }
 
 template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) {
