@@ -109,6 +109,27 @@ thread1.join();
 thread2.join();
 ```
 
+または、トランザクションに対して `get_join_handler()` を呼び出してください。
+
+```
+Transaction trans1;
+A.send("HOGE")
+JoinHandler handler1 = trans1.get_join_handler();
+
+
+// get_join_handler()を呼び出した段階で現在のトランザクションは触れなくなる
+// そのため、trans2はtrans1にネストしたように見えるが実際は別のトランザクションとなる
+Transaction trans2;
+A.send("FUGA")
+JoinHandler handler2 = trans1.get_join_handler();
+
+
+// 取得したHandlerは `join()` を呼び出すことで終了するまでブロッキングできる
+// また、`join()` する順序は重要では無いので `handler2.join(); handler1.join();` でも正しく動作する
+handler1.join();
+handler2.join();
+```
+
 このときtrans1とtrans2がどの順序で実行されるのかを保証する必要がある場合は適宜condition_variableなどで順序の制御をしてください。
 > 需要が高いならブロッキングしない & トランザクションの順序が自明なAPIも考えます
 
