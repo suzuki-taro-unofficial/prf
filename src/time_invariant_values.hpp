@@ -5,7 +5,7 @@
 #include "types.hpp"
 
 namespace prf {
-class Transaction;
+class InnerTransaction;
 
 // 時変値を表すクラス
 // StreamとCellが共通して持つべき性質を切り出しているだけなので、これを継承したクラスを利用すること
@@ -16,13 +16,13 @@ private:
 
 protected:
   // この時変値を参照している時変値の更新をトランザクションに登録する
-  void register_listeners_update(Transaction *transaction);
+  void register_listeners_update(InnerTransaction *transaction);
 
   /**
    * この時変値がトランザクションの終了時に後処理の必要があることを登録する
    * このメソッドで登録しておかないと値が残り続けるので注意
    */
-  void register_cleanup(Transaction *transaction);
+  void register_cleanup(InnerTransaction *transaction);
 
 public:
   // この時変値のノード
@@ -32,14 +32,14 @@ public:
   TimeInvariantValues(ID cluster_id);
 
   // 現在のトランザクションでの更新をする
-  virtual void update(Transaction *transaction);
+  virtual void update(InnerTransaction *transaction);
   // transaction_idに対応するトランザクションとそれ以前での時変値が不要である場合に消去する
   virtual void refresh(ID transaction_id);
 
   /**
    * トランザクションの終了時に必要な処理を行なう
    */
-  virtual void finalize(Transaction *transaction);
+  virtual void finalize(InnerTransaction *transaction);
 
   ID get_cluster_id();
 

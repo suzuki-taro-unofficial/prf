@@ -61,15 +61,15 @@ public:
   void listenFromOuter(std::function<void(std::shared_ptr<T>)>);
 
   // transactionに対応する時刻にvalueを登録する
-  void send(T value, Transaction *transaction);
+  void send(T value, InnerTransaction *transaction);
 
   void send(T value);
 
-  void update(Transaction *transaction) override;
+  void update(InnerTransaction *transaction) override;
 
   void refresh(ID transaction_id) override;
 
-  void finalize(Transaction *transaction) override;
+  void finalize(InnerTransaction *transaction) override;
 
   template <class U> friend class CellLoop;
   template <class U> friend class GlobalCellLoop;
@@ -163,7 +163,7 @@ CellInternal<T>::CellInternal(
     : TimeInvariantValues(cluster_id), updater(updater) {
   // 初期値はEecutorの初期化処理に含める
   Executor::after_build_hooks.push_back(
-      [this, initial_value](Transaction *transaction) -> void {
+      [this, initial_value](InnerTransaction *transaction) -> void {
         this->send(initial_value);
       });
 }
@@ -179,14 +179,14 @@ CellInternal<T>::CellInternal(ID cluster_id, T initial_value)
                           }) {
   // 初期値はEecutorの初期化処理に含める
   Executor::after_build_hooks.push_back(
-      [this, initial_value](Transaction *transaction) -> void {
+      [this, initial_value](InnerTransaction *transaction) -> void {
         this->send(initial_value);
       });
 }
 
 template <class T> void CellInternal<T>::send(T value) {
   if (current_transaction == nullptr) {
-    Transaction trans;
+    InnerTransaction trans;
     send(value, current_transaction);
   } else {
     send(value, current_transaction);
@@ -194,7 +194,7 @@ template <class T> void CellInternal<T>::send(T value) {
 }
 
 template <class T>
-void CellInternal<T>::send(T value, Transaction *transaction) {
+void CellInternal<T>::send(T value, InnerTransaction *transaction) {
   {
     std::lock_guard<std::mutex> lock(mtx);
     values[transaction->get_id()] = std::make_shared<T>(value);
@@ -228,7 +228,7 @@ void CellInternal<T>::listenFromOuter(
   listeners.push_back(f);
 }
 
-template <class T> void CellInternal<T>::update(Transaction *transaction) {
+template <class T> void CellInternal<T>::update(InnerTransaction *transaction) {
   ID transaction_id = transaction->get_id();
   this->updater;
   std::optional<T> res = this->updater(transaction_id);
@@ -252,7 +252,7 @@ template <class T> void CellInternal<T>::refresh(ID transaction_id) {
   }
 }
 
-template <class T> void CellInternal<T>::finalize(Transaction *transaction) {
+template <class T> void CellInternal<T>::finalize(InnerTransaction *transaction) {
   std::shared_ptr<T> value = this->unsafeSample(transaction->get_id());
   for (std::function<void(std::shared_ptr<T>)> &listener : listeners) {
     listener(value);

@@ -8,24 +8,25 @@
 
 namespace prf {
 
-bool Transaction::is_in_updating() {
+bool InnerTransaction::is_in_updating() {
   return updating_cluster != ClusterManager::UNMANAGED_CLUSTER_ID;
 }
 
-Transaction *Transaction::generate_sub_transaction(ID updating_cluster) {
-  Transaction *trans = new Transaction(id, updating_cluster);
+InnerTransaction *
+InnerTransaction::generate_sub_transaction(ID updating_cluster) {
+  InnerTransaction *trans = new InnerTransaction(id, updating_cluster);
   for (auto x : targets_outside_current_cluster[updating_cluster]) {
     trans->register_update(x);
   }
   return trans;
 }
 
-Transaction::Transaction(ID id, ID updating_cluster)
-    : id(id), updating_cluster(updating_cluster),
+InnerTransaction::InnerTransaction(ID id, ID updating_cluster)
+    : id(id), updating_cluster(updating_cluster), updating(false),
       inside_transaction(updating_cluster !=
                          ClusterManager::UNMANAGED_CLUSTER_ID) {}
 
-Transaction::Transaction() {
+InnerTransaction::InnerTransaction() {
   // 既にトランザクションがある場合はそちらを使う
   if (current_transaction != nullptr) {
     assert((not current_transaction->is_in_updating()) &&
@@ -36,20 +37,25 @@ Transaction::Transaction() {
   }
   updating_cluster = ClusterManager::UNMANAGED_CLUSTER_ID;
   inside_transaction = false;
+  updating = false;
   id = next_transaction_id.fetch_add(1);
   current_transaction = this;
 }
 
-Transaction::~Transaction() {
+InnerTransaction::~InnerTransaction() {
   // 別のトランザクションが外にある場合は何もしない
   if (inside_transaction) {
+    return;
+  }
+  // 既に更新処理を終えているなら何もしない
+  if (updating) {
     return;
   }
   start_updating();
   current_transaction = nullptr;
 }
 
-void Transaction::register_update(TimeInvariantValues *tiv) {
+void InnerTransaction::register_update(TimeInvariantValues *tiv) {
   ID id = tiv->get_cluster_id();
   if (updating_cluster == id) {
     // 実行用のキューに同時に同一の時変値が複数詰まれないようにするためにこうする
@@ -64,15 +70,16 @@ void Transaction::register_update(TimeInvariantValues *tiv) {
   }
 }
 
-void Transaction::register_cleanup(TimeInvariantValues *tiv) {
+void InnerTransaction::register_cleanup(TimeInvariantValues *tiv) {
   cleanups.insert(tiv);
 }
 
-void Transaction::register_before_update_hook(std::function<void(ID)> hook) {
+void InnerTransaction::register_before_update_hook(
+    std::function<void(ID)> hook) {
   this->before_update_hooks.push_back(hook);
 }
 
-ExecuteResult Transaction::execute() {
+ExecuteResult InnerTransaction::execute() {
   while (not executor.empty()) {
     auto entry = executor.top();
     executor.pop();
@@ -87,7 +94,7 @@ ExecuteResult Transaction::execute() {
   return result;
 }
 
-void Transaction::start_updating() {
+void InnerTransaction::start_updating() {
   TransactionExecuteMessage *msg = new TransactionExecuteMessage(this);
   ExecutorMessage emsg = msg;
   Executor::messages.push(emsg);
@@ -95,7 +102,7 @@ void Transaction::start_updating() {
   delete msg;
 }
 
-std::set<ID> Transaction::register_execution_result(ExecuteResult result) {
+std::set<ID> InnerTransaction::register_execution_result(ExecuteResult result) {
   assert(not this->is_in_updating() &&
          "更新用のトランザクションで呼び出すことを想定していません");
   std::set<ID> res;
@@ -114,7 +121,7 @@ std::set<ID> Transaction::register_execution_result(ExecuteResult result) {
   return res;
 }
 
-std::set<ID> Transaction::target_clusters() {
+std::set<ID> InnerTransaction::target_clusters() {
   assert(not this->is_in_updating() &&
          "更新用のトランザクションで呼び出すことを想定していません");
   std::set<ID> res;
@@ -124,7 +131,7 @@ std::set<ID> Transaction::target_clusters() {
   return res;
 }
 
-void Transaction::finalize() {
+void InnerTransaction::finalize() {
   for (auto cleanup : this->cleanups) {
     cleanup->finalize(this);
   }
@@ -133,9 +140,62 @@ void Transaction::finalize() {
   }
 }
 
-ID Transaction::get_id() { return id; }
+ID InnerTransaction::get_id() { return id; }
 
 std::atomic_ulong next_transaction_id(0);
-thread_local Transaction *current_transaction = nullptr;
+thread_local InnerTransaction *current_transaction = nullptr;
+
+JoinHandler::JoinHandler(TransactionExecuteMessage *message)
+    : message(message) {}
+
+JoinHandler::JoinHandler(JoinHandler &&other) {
+  this->message = other.message;
+  other.message = nullptr;
+}
+
+JoinHandler::~JoinHandler() {
+  this->join();
+  delete this->message;
+}
+
+void JoinHandler::join() {
+  if (this->message == nullptr) {
+    return;
+  }
+  this->message->wait();
+}
+
+Transaction::Transaction() {
+  if (current_transaction == nullptr) {
+    current_transaction = new InnerTransaction;
+    this->inner = current_transaction;
+  } else {
+    this->inner = nullptr;
+  }
+}
+
+Transaction::~Transaction() {
+  if (this->inner != nullptr) {
+    delete this->inner;
+    current_transaction = nullptr;
+  }
+}
+
+JoinHandler Transaction::get_join_handler() {
+  assert(this->inner != nullptr &&
+         "既にハンドラを取得しているか、このオブジェクトからJoinHandlerを取得す"
+         "ることはできません");
+
+  TransactionExecuteMessage *msg = new TransactionExecuteMessage(this->inner);
+  ExecutorMessage emsg = msg;
+  Executor::messages.push(emsg);
+
+  // グローバルのトランザクションを消す
+  current_transaction = nullptr;
+
+  this->inner = nullptr;
+
+  return JoinHandler(msg);
+}
 
 } // namespace prf

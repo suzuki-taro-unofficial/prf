@@ -1,5 +1,6 @@
 #pragma once
 
+#include "executor.hpp"
 #include "time_invariant_values.hpp"
 #include "types.hpp"
 #include <atomic>
@@ -11,8 +12,9 @@
 
 namespace prf {
 
+class TransactionExecuteMessage;
 class TimeInvariantValues;
-class Transaction;
+class InnerTransaction;
 
 /**
  * クラスタの更新が終了時にトランザクションへ返すデータ
@@ -34,7 +36,32 @@ struct ExecuteResult {
   std::vector<std::function<void(ID)>> before_update_hooks;
 };
 
-class Transaction {
+class JoinHandler {
+private:
+  TransactionExecuteMessage *message;
+
+public:
+  /**
+   * コピーコンストラクタは呼び出せないようにしておく
+   */
+  JoinHandler(const JoinHandler &) = delete;
+  JoinHandler &operator=(const JoinHandler &) = delete;
+
+  /**
+   * JoinHandlerはstd::moveでしか移動できないようにする
+   */
+  JoinHandler(JoinHandler &&);
+
+  JoinHandler(TransactionExecuteMessage *);
+  ~JoinHandler();
+
+  void join();
+};
+
+/**
+ * 内部で利用するトランザクション
+ */
+class InnerTransaction {
 private:
   /**
    * このトランザクションのID
@@ -52,6 +79,11 @@ private:
    * このオブジェクトの外にもトランザクションが存在するか
    */
   bool inside_transaction;
+
+  /**
+   * このオブジェクトに関連したトランザクションが既に更新処理を初めているか
+   */
+  bool updating;
 
   /**
    * 更新中のクラスターで更新が必要な時変値の一覧
@@ -83,12 +115,12 @@ private:
    */
   void start_updating();
 
-  Transaction(ID id, ID updating_cluster);
+  InnerTransaction(ID id, ID updating_cluster);
 
 public:
-  Transaction();
+  InnerTransaction();
 
-  ~Transaction();
+  ~InnerTransaction();
 
   /**
    * このトランザクションが更新処理を実行中であるか
@@ -134,7 +166,7 @@ public:
   /**
    * 更新処理を行なうスレッドのためのサブトランザクションを生成する
    */
-  Transaction *generate_sub_transaction(ID updating_cluster);
+  InnerTransaction *generate_sub_transaction(ID updating_cluster);
 
   /**
    * トランザクションの終了処理をする
@@ -146,5 +178,30 @@ extern std::atomic_ulong next_transaction_id;
 
 // 現在のスレッドで動作しているトランザクション
 // 存在しなければnullptrになる
-thread_local extern Transaction *current_transaction;
+thread_local extern InnerTransaction *current_transaction;
+
+/**
+ * ユーザーがトランザクションを制御するために作成するクラス
+ */
+class Transaction {
+private:
+  InnerTransaction *inner;
+
+public:
+  Transaction(const Transaction &) = delete;
+  Transaction &operator=(const Transaction &) = delete;
+
+  Transaction();
+  ~Transaction();
+
+  /**
+   * トランザクションの終了処理をJoinHandlerに移譲する
+   * これを呼び出すと ~Transaction()
+   * ではブロッキングが発生しなくなり、更新をしたい場合は返される JoinHandler の
+   * join() を呼び出す必要がある
+   * また、このメソッドを呼び出すことでトランザクションがそこで終了するので、それ以降はsend等をした際は他のトランザションの管轄となる
+   */
+  JoinHandler get_join_handler();
+};
+
 } // namespace prf

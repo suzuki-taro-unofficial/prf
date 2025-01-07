@@ -5,13 +5,13 @@
 
 namespace prf {
 
-void TimeInvariantValues::register_listeners_update(Transaction *transaction) {
+void TimeInvariantValues::register_listeners_update(InnerTransaction *transaction) {
   for (auto tiv : this->listners) {
     transaction->register_update(tiv);
   }
 }
 
-void TimeInvariantValues::register_cleanup(Transaction *transaction) {
+void TimeInvariantValues::register_cleanup(InnerTransaction *transaction) {
   transaction->register_cleanup(this);
 }
 
@@ -20,7 +20,7 @@ TimeInvariantValues::TimeInvariantValues(ID cluster_id)
   NodeManager::globalNodeManager->register_node(this->node);
 }
 
-void TimeInvariantValues::update(Transaction *transaction) {}
+void TimeInvariantValues::update(InnerTransaction *transaction) {}
 
 void TimeInvariantValues::refresh(ID transaction_id) {}
 
@@ -44,5 +44,5 @@ void TimeInvariantValues::global_listen(TimeInvariantValues *to) {
   to->listners.push_back(this);
 }
 
-void TimeInvariantValues::finalize(Transaction *transaction) {}
+void TimeInvariantValues::finalize(InnerTransaction *transaction) {}
 } // namespace prf

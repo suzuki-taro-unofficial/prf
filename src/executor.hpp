@@ -1,12 +1,17 @@
 #pragma once
 #include "concurrent_queue.hpp"
 #include "transaction.hpp"
+#include "types.hpp"
 #include <condition_variable>
+#include <functional>
 #include <map>
 #include <mutex>
+#include <set>
 #include <variant>
 
 namespace prf {
+
+class InnerTransaction;
 
 /**
  * あるトランザクションの更新を開始するメッセージ
@@ -20,9 +25,9 @@ public:
   /**
    * 更新して欲しいトランザクション
    */
-  Transaction *transaction;
+  InnerTransaction *transaction;
 
-  TransactionExecuteMessage(Transaction *transaction);
+  TransactionExecuteMessage(InnerTransaction *transaction);
   /**
    * 更新処理が終了したことを通知する
    */
@@ -112,6 +117,6 @@ public:
   /**
    * PRFのセットアップが終了したあとに呼び出す関数のリスト
    */
-  static std::vector<std::function<void(Transaction *)>> after_build_hooks;
+  static std::vector<std::function<void(InnerTransaction *)>> after_build_hooks;
 };
 } // namespace prf

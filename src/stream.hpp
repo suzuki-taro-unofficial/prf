@@ -56,15 +56,15 @@ public:
   void listenFromOuter(std::function<void(std::shared_ptr<T>)>);
 
   // transactionに対応する時刻にvalueを登録する
-  void send(T value, Transaction *transaction);
+  void send(T value, InnerTransaction *transaction);
 
   void send(T value);
 
-  void update(Transaction *transaction) override;
+  void update(InnerTransaction *transaction) override;
 
   void refresh(ID transaction_id) override;
 
-  void finalize(Transaction *transaction) override;
+  void finalize(InnerTransaction *transaction) override;
 
   template <class U> friend class StreamLoop;
 };
@@ -172,7 +172,7 @@ StreamInternal<T>::StreamInternal(ID cluster_id)
 
 template <class T> void StreamInternal<T>::send(T value) {
   if (current_transaction == nullptr) {
-    Transaction trans;
+    InnerTransaction trans;
     send(value, current_transaction);
   } else {
     send(value, current_transaction);
@@ -180,7 +180,7 @@ template <class T> void StreamInternal<T>::send(T value) {
 }
 
 template <class T>
-void StreamInternal<T>::send(T value, Transaction *transaction) {
+void StreamInternal<T>::send(T value, InnerTransaction *transaction) {
   {
     {
       std::lock_guard<std::mutex> lock(mtx);
@@ -214,7 +214,7 @@ void StreamInternal<T>::listenFromOuter(
   listeners.push_back(f);
 }
 
-template <class T> void StreamInternal<T>::update(Transaction *transaction) {
+template <class T> void StreamInternal<T>::update(InnerTransaction *transaction) {
   ID transaction_id = transaction->get_id();
   std::optional<T> res = updater(transaction_id);
   if (res) {
@@ -230,7 +230,7 @@ template <class T> void StreamInternal<T>::refresh(ID transaction_id) {
   }
 }
 
-template <class T> void StreamInternal<T>::finalize(Transaction *transaction) {
+template <class T> void StreamInternal<T>::finalize(InnerTransaction *transaction) {
   std::shared_ptr<T> value = this->unsafeSample(transaction->get_id());
   for (std::function<void(std::shared_ptr<T>)> &listener : listeners) {
     listener(value);

@@ -10,7 +10,8 @@
 #include <variant>
 
 namespace prf {
-TransactionExecuteMessage::TransactionExecuteMessage(Transaction *transaction)
+TransactionExecuteMessage::TransactionExecuteMessage(
+    InnerTransaction *transaction)
     : transaction(transaction), already_done(false) {}
 
 void TransactionExecuteMessage::done() {
@@ -95,14 +96,15 @@ void Executor::start_loop() {
         // 既に更新している場合はスキップする
         continue;
       }
+      transaction_updatings[transaction_id].insert(cluster_id);
 
       info_log("クラスタの更新を依頼されました Transaction: %ld, "
                "Cluster: %ld",
                transaction_id, cluster_id);
 
-      Transaction *transaction =
+      InnerTransaction *transaction =
           this->transactions[transaction_id]->transaction;
-      Transaction *subtransaction =
+      InnerTransaction *subtransaction =
           transaction->generate_sub_transaction(cluster_id);
 
       {
@@ -181,15 +183,16 @@ void Executor::start_loop() {
 }
 
 void Executor::invoke_after_build_hooks() {
-  Transaction transaction;
+  InnerTransaction transaction;
   for (auto &hook : after_build_hooks) {
     hook(&transaction);
   }
   after_build_hooks.clear();
 }
 
-std::vector<std::function<void(Transaction *)>> Executor::after_build_hooks =
-    std::vector<std::function<void(Transaction *)>>();
+std::vector<std::function<void(InnerTransaction *)>>
+    Executor::after_build_hooks =
+        std::vector<std::function<void(InnerTransaction *)>>();
 
 ConcurrentQueue<ExecutorMessage> Executor::messages;
 Executor *Executor::global_executor = nullptr;
