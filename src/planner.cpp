@@ -1,8 +1,11 @@
 #include "planner.hpp"
+#include "concurrent_queue.hpp"
 #include "executor.hpp"
 #include "logger.hpp"
 #include "rank.hpp"
 #include "thread.hpp"
+#include <atomic>
+#include <thread>
 
 namespace prf {
 bool PlannerManager::handleMessage(PlannerMessage message) {
@@ -137,18 +140,28 @@ void PlannerManager::handleFinishMessage(
   this->transaction_states.pop_front();
 }
 
-PlannerManager::PlannerManager(std::vector<Rank> cluster_ranks)
+PlannerManager::PlannerManager(std::vector<Rank> cluster_ranks,
+                               std::vector<Planner> planners)
     : cluster_ranks(cluster_ranks), transaction_states(),
-      current_planner(nullptr) {}
+      stop_planning_needed(false), planners(planners) {}
 
 void PlannerManager::start_planning() {
-  if (current_planner != nullptr) {
-    current_planner->stop_planning();
+  for (auto &planner : this->planners) {
+    std::thread t([this, &planner]() {
+      planner(this->cluster_ranks, this->transaction_states, Executor::messages,
+              this->stop_planning_needed);
+    });
+    this->running_planners.push_back(std::move(t));
   }
-  current_planner = new SimplePlanner(
-      this->cluster_ranks, this->transaction_states, Executor::messages);
+}
 
-  current_planner->start_planning();
+void PlannerManager::stop_planning() {
+  this->stop_planning_needed.store(true);
+  for (auto &planner : this->running_planners) {
+    planner.join();
+  }
+  this->running_planners.clear();
+  this->stop_planning_needed.store(true);
 }
 
 void PlannerManager::start_loop() {
@@ -159,17 +172,17 @@ void PlannerManager::start_loop() {
     }
     bool need_refresh = this->handleMessage(*omsg);
     if (need_refresh) {
+      this->stop_planning();
       this->start_planning();
     }
   }
-  if (this->current_planner != nullptr) {
-    this->current_planner->stop_planning();
-  }
+  this->stop_planning();
   info_log("PlannerManagerの実行を停止します");
 }
 
 void PlannerManager::initialize(std::vector<Rank> ranks) {
-  globalPlannerManager = new PlannerManager(ranks);
+  globalPlannerManager =
+      new PlannerManager(ranks, std::vector<Planner>({simple_planner}));
   PlannerManager *ptr = globalPlannerManager;
   std::thread t([ptr]() -> void {
     ptr->start_loop();
@@ -178,49 +191,13 @@ void PlannerManager::initialize(std::vector<Rank> ranks) {
   t.detach();
 }
 
-Planner::Planner(std::vector<Rank> cluster_ranks,
-                 std::deque<TransactionState> transaction_states,
-                 ConcurrentQueue<ExecutorMessage> &executor_message_queue)
-    : cluster_ranks(cluster_ranks), transaction_states(transaction_states),
-      executor_message_queue(executor_message_queue), stop(false),
-      references(2) {}
-
-void Planner::stop_planning() {
-  this->stop = true;
-  this->current_thread.detach();
-  // もうスレッドの実行が終了していたなら消す
-  if (this->references.fetch_sub(1) == 1) {
-    delete this;
-  }
-}
-
-void Planner::start_planning() {
-  this->current_thread = std::thread([this]() {
-    this->planning();
-
-    finalize_planning();
-  });
-}
-
-void Planner::finalize_planning() {
-  // PlannerManagerから終了扱いされていたら消す
-  if (this->references.fetch_sub(1) == 1) {
-    delete this;
-  }
-}
-
-void Planner::planning() {}
-
-SimplePlanner::SimplePlanner(
-    std::vector<Rank> cluster_ranks,
-    std::deque<TransactionState> transaction_states,
-    ConcurrentQueue<ExecutorMessage> &executor_message_queue)
-    : Planner(cluster_ranks, transaction_states, executor_message_queue) {}
-
-void SimplePlanner::planning() {
+void simple_planner(std::vector<Rank> &cluster_ranks,
+                    std::deque<TransactionState> &transaction_states,
+                    ConcurrentQueue<ExecutorMessage> &executor_message_queue,
+                    std::atomic_bool &stop) {
   // シンプルな実行計画
   // 一番新しいトランザクションにクラスタを割り当てて終了
-  if (this->transaction_states.empty()) {
+  if (transaction_states.empty()) {
     return;
   }
   TransactionState &state = transaction_states.front();
@@ -232,7 +209,7 @@ void SimplePlanner::planning() {
     // 更新できるクラスタがもう無い場合は終了する
     FinalizeTransactionMessage msg;
     msg.transaction_id = state.transaction_id;
-    this->executor_message_queue.push(msg);
+    executor_message_queue.push(msg);
     return;
   }
   if (state.now.empty()) {
@@ -241,11 +218,11 @@ void SimplePlanner::planning() {
     u64 target_rank = state.target_ranks.begin()->first;
 
     for (auto cluster_id : state.future) {
-      if (this->cluster_ranks[cluster_id] == target_rank) {
+      if (cluster_ranks[cluster_id] == target_rank) {
         StartUpdateClusterMessage msg;
         msg.transaction_id = state.transaction_id;
         msg.cluster_id = cluster_id;
-        this->executor_message_queue.push(msg);
+        executor_message_queue.push(msg);
         return;
       }
     }

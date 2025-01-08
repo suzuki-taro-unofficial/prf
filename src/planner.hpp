@@ -92,71 +92,11 @@ using PlannerMessage =
                  FinishTransactionMessage>;
 
 /**
- * 実際に実行計画を建てるクラス
+ * 実行計画を建てる関数
  */
-class Planner {
-private:
-  /**
-   * このPlannerのインスタンスを参照している箇所の個数
-   */
-  std::atomic_int references;
-
-  std::thread current_thread;
-
-  /**
-   * planning()が終了したときの後処理をする
-   */
-  void finalize_planning();
-
-protected:
-  /**
-   * 現在の実行計画を止めるべきか
-   * このフラグがtrueであることがplanning()の中で分かった場合、自分自身をdeleteして終了する必要がある
-   */
-  volatile bool stop;
-
-  /**
-   * それぞれクラスタのランクとトランザクションの状態
-   * 実行計画を建てるのを開始した時点でスナップショットを受けとり、それ以降内容は変更されない
-   */
-  std::vector<Rank> cluster_ranks;
-  std::deque<TransactionState> transaction_states;
-
-  /**
-   * 実行計画に関するメッセージを送る先
-   * 単体テスト時はここを適当なキューに置き変えると良い
-   */
-  ConcurrentQueue<ExecutorMessage> &executor_message_queue;
-
-  /**
-   * 現在の情報から実行計画を建てる
-   */
-  virtual void planning();
-
-public:
-  Planner(std::vector<Rank> cluster_ranks,
-          std::deque<TransactionState> transaction_states,
-          ConcurrentQueue<ExecutorMessage> &executor_message_queue);
-  /**
-   * バックグラウンドで動作しているスレッドを停止する
-   */
-  void stop_planning();
-
-  /**
-   * 実行計画を建てるスレッドをバックグラウンドで開始する
-   */
-  void start_planning();
-};
-
-class SimplePlanner : public Planner {
-protected:
-  void planning() override;
-
-public:
-  SimplePlanner(std::vector<Rank> cluster_ranks,
-                std::deque<TransactionState> transaction_states,
-                ConcurrentQueue<ExecutorMessage> &executor_message_queue);
-};
+using Planner =
+    std::function<void(std::vector<Rank> &, std::deque<TransactionState> &,
+                       ConcurrentQueue<ExecutorMessage> &, std::atomic_bool &)>;
 
 /**
  * 実行計画を建てるPlannerを管理するクラス
@@ -182,7 +122,15 @@ private:
   /**
    * 現在バックグラウンドで稼動しているPlanner
    */
-  Planner *current_planner;
+  std::vector<std::thread> running_planners;
+
+  std::atomic_bool stop_planning_needed;
+
+  /**
+   * 実行計画を建てる関数の列
+   * 複数の視点から実行計画を建てられるように列で受けとるようにしておく
+   */
+  std::vector<Planner> planners;
 
   /**
    * メッセージそれぞれをハンドリングするメソッド
@@ -191,8 +139,14 @@ private:
   void handleUpdateMessage(const UpdateTransactionMessage &);
   void handleFinishMessage(const FinishTransactionMessage &);
 
+  /**
+   * Plannerの実行を止める
+   */
+  void stop_planning();
+
 public:
-  PlannerManager(std::vector<Rank> cluster_ranks);
+  PlannerManager(std::vector<Rank> cluster_ranks,
+                 std::vector<Planner> planners);
 
   /**
    * メッセージキューへ来たメッセージを処理する
@@ -219,4 +173,9 @@ public:
 
   static PlannerManager *globalPlannerManager;
 };
+
+void simple_planner(std::vector<Rank> &cluster_ranks,
+                    std::deque<TransactionState> &transaction_states,
+                    ConcurrentQueue<ExecutorMessage> &executor_message_queue,
+                    std::atomic_bool &stop);
 } // namespace prf
