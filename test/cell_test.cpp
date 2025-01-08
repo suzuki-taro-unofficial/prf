@@ -90,7 +90,7 @@ void test_3() {
 void test_4() {
   prf::GlobalCellLoop<int> cg;
 
-  // Clusterはクラスターを越えても動く
+  // GlobalCellLoopはクラスターを越えても動く
   prf::Cluster *cluster = new prf::Cluster();
   prf::StreamSink<int> s1;
   prf::Stream<int> s2 =
