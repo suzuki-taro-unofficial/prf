@@ -15,4 +15,10 @@ void build();
  */
 void initialize();
 
+/**
+ * 並列動作するか否か
+ * build関数の実行前にセットしてください
+ */
+extern volatile bool use_parallel_execution;
+
 } // namespace prf

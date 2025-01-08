@@ -92,6 +92,11 @@ using PlannerMessage =
                  FinishTransactionMessage>;
 
 /**
+ * メッセージがPlannerの再実行を必要とするものかを判定する
+ */
+bool need_refresh_message(const PlannerMessage &message);
+
+/**
  * 実行計画を建てる関数
  */
 using Planner =
@@ -150,9 +155,8 @@ public:
 
   /**
    * メッセージキューへ来たメッセージを処理する
-   * 実行計画を再度建て直す必要があるときはtrueを返す
    */
-  bool handleMessage(PlannerMessage);
+  void handleMessage(PlannerMessage);
 
   /**
    * 現在の状態から実行計画を建て初める
@@ -174,8 +178,20 @@ public:
   static PlannerManager *globalPlannerManager;
 };
 
+/**
+ * 逐次実行だけできるPlanner
+ */
 void simple_planner(std::vector<Rank> &cluster_ranks,
                     std::deque<TransactionState> &transaction_states,
                     ConcurrentQueue<ExecutorMessage> &executor_message_queue,
                     std::atomic_bool &stop);
+
+/**
+ * ランクの情報から並列に動作するよう更新依頼を作るPlanner
+ */
+void rank_based_planner(
+    std::vector<Rank> &cluster_ranks,
+    std::deque<TransactionState> &transaction_states,
+    ConcurrentQueue<ExecutorMessage> &executor_message_queue,
+    std::atomic_bool &stop);
 } // namespace prf

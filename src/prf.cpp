@@ -30,4 +30,6 @@ void initialize() {
   }
 }
 
+volatile bool use_parallel_execution = false;
+
 } // namespace prf

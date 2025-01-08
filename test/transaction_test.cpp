@@ -1,6 +1,8 @@
+#include "cluster.hpp"
 #include "prf.hpp"
 #include "stream.hpp"
 #include "transaction.hpp"
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -72,7 +74,80 @@ void test_2() {
   handlers.push_back(std::move(handler2));
 }
 
+void test_3() {
+  std::atomic_int n(0);
+
+  prf::StreamSink<int> s;
+  int sum = 0;
+
+  {
+    prf::Cluster cluster;
+    s.map([&n](int x) -> int {
+       if (x == 1) {
+         n.fetch_add(1);
+         while (n.load() != 3) {
+         }
+       }
+       return x;
+     }).listen([&sum](int x) -> void { sum += x; });
+  }
+
+  {
+    prf::Cluster cluster;
+    s.map([&n](int x) -> int {
+       if (x == 2) {
+         n.fetch_add(1);
+         while (n.load() != 3) {
+         }
+       }
+       return x;
+     }).listen([&sum](int x) -> void { sum += x; });
+  }
+
+  {
+    prf::Cluster cluster;
+    s.map([&n](int x) -> int {
+       if (x == 3) {
+         n.fetch_add(1);
+         while (n.load() != 3) {
+         }
+       }
+       return x;
+     }).listen([&sum](int x) -> void { sum += x; });
+  }
+
+  prf::use_parallel_execution = true;
+  prf::build();
+
+  std::vector<prf::JoinHandler> handlers;
+
+  {
+    prf::Transaction trans;
+    s.send(1);
+    handlers.push_back(trans.get_join_handler());
+  }
+  {
+    prf::Transaction trans;
+    s.send(2);
+    handlers.push_back(trans.get_join_handler());
+  }
+  {
+    prf::Transaction trans;
+    s.send(3);
+    handlers.push_back(trans.get_join_handler());
+  }
+
+  for (auto &handler : handlers) {
+    handler.join();
+  }
+
+  assert(sum == 18 && "並列に更新されている");
+
+  prf::use_parallel_execution = false;
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
+  run_test(test_3);
 }

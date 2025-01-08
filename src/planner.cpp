@@ -2,33 +2,47 @@
 #include "concurrent_queue.hpp"
 #include "executor.hpp"
 #include "logger.hpp"
+#include "prf.hpp"
 #include "rank.hpp"
 #include "thread.hpp"
 #include <atomic>
+#include <limits>
+#include <set>
 #include <thread>
+#include <variant>
 
 namespace prf {
-bool PlannerManager::handleMessage(PlannerMessage message) {
+void PlannerManager::handleMessage(PlannerMessage message) {
   if (std::holds_alternative<StartTransactionMessage>(message)) {
     const StartTransactionMessage &msg =
         std::get<StartTransactionMessage>(message);
     this->handleStartMessage(msg);
-    return false;
+    return;
   }
   if (std::holds_alternative<UpdateTransactionMessage>(message)) {
     const UpdateTransactionMessage &msg =
         std::get<UpdateTransactionMessage>(message);
     this->handleUpdateMessage(msg);
-    return true;
+    return;
   }
   if (std::holds_alternative<FinishTransactionMessage>(message)) {
     const FinishTransactionMessage &msg =
         std::get<FinishTransactionMessage>(message);
     this->handleFinishMessage(msg);
-    return true;
+    return;
   }
   warn_log("メッセージが適切に処理されなかった");
-  return false; // ここには来ないはずだが、一応falseを返しておく
+  return; // ここには来ないはず
+}
+
+bool need_refresh_message(const PlannerMessage &message) {
+  if (std::holds_alternative<UpdateTransactionMessage>(message)) {
+    return true;
+  }
+  if (std::holds_alternative<FinishTransactionMessage>(message)) {
+    return true;
+  }
+  return false;
 }
 
 TransactionState::TransactionState(ID transaction_id)
@@ -161,7 +175,7 @@ void PlannerManager::stop_planning() {
     planner.join();
   }
   this->running_planners.clear();
-  this->stop_planning_needed.store(true);
+  this->stop_planning_needed.store(false);
 }
 
 void PlannerManager::start_loop() {
@@ -170,9 +184,12 @@ void PlannerManager::start_loop() {
     if (not omsg) {
       break;
     }
-    bool need_refresh = this->handleMessage(*omsg);
+    bool need_refresh = need_refresh_message(*omsg);
     if (need_refresh) {
       this->stop_planning();
+    }
+    this->handleMessage(*omsg);
+    if (need_refresh) {
       this->start_planning();
     }
   }
@@ -181,8 +198,14 @@ void PlannerManager::start_loop() {
 }
 
 void PlannerManager::initialize(std::vector<Rank> ranks) {
+  std::vector<Planner> planners({simple_planner});
+  if (use_parallel_execution) {
+    // デバッグをやりやすくするため、一旦Plannerは同時に一つまでにしておく
+    planners.clear();
+    planners.push_back(rank_based_planner);
+  }
   globalPlannerManager =
-      new PlannerManager(ranks, std::vector<Planner>({simple_planner}));
+      new PlannerManager(ranks, std::vector<Planner>(planners));
   PlannerManager *ptr = globalPlannerManager;
   std::thread t([ptr]() -> void {
     ptr->start_loop();
@@ -229,6 +252,73 @@ void simple_planner(std::vector<Rank> &cluster_ranks,
   } else {
     // 何かを実行中だったら新しく割り当てない
   }
+}
+
+void rank_based_planner(
+    std::vector<Rank> &cluster_ranks,
+    std::deque<TransactionState> &transaction_states,
+    ConcurrentQueue<ExecutorMessage> &executor_message_queue,
+    std::atomic_bool &stop) {
+  info_log("rank_based_plannerの作業を開始します");
+
+  // 自分より先のトランザクションが使用しているクラスターの仲で一番低いランク
+  ID target_rank = std::numeric_limits<ID>::max();
+  // target_rank
+  // のクラスターの中で自分より先のトランザクションが使用する可能性のあるクラスター
+  std::set<ID> used_clusters;
+  // 今見ているトランザクションがキューの中で一番若いか
+  bool is_head = true;
+
+  // 先に産まれたトランザクションを順に割り当てていく
+  for (size_t i = 0; i < transaction_states.size(); ++i) {
+    // 終了命令が来ていたら終了する
+    if (stop.load()) {
+      info_log("rank_based_plannerの作業を外部の信号により終了します");
+      break;
+    }
+    TransactionState &state = transaction_states[i];
+    // トランザクションの初期化が未だである場合はそれ以降の作業を終了する
+    if (not state.initialized) {
+      break;
+    }
+
+    for (ID now : state.now) {
+      u64 rank = cluster_ranks[now].value;
+      if (rank < target_rank) {
+        target_rank = rank;
+        used_clusters.clear();
+      }
+      used_clusters.insert(now);
+    }
+    for (ID future : state.future) {
+      u64 rank = cluster_ranks[future].value;
+      if (target_rank < rank) {
+        // 他のトランザクションが触るかもしれないので考えない
+        continue;
+      }
+      if (rank < target_rank) {
+        target_rank = rank;
+        used_clusters.clear();
+      }
+      if (used_clusters.count(future)) {
+        // 他のトランザクションが既に触っているなら割り当てない
+        continue;
+      }
+      used_clusters.insert(future);
+      StartUpdateClusterMessage msg;
+      msg.transaction_id = state.transaction_id;
+      msg.cluster_id = future;
+      executor_message_queue.push(msg);
+    }
+    if (is_head and state.future.empty() and state.now.empty()) {
+      FinalizeTransactionMessage msg;
+      msg.transaction_id = state.transaction_id;
+      executor_message_queue.push(msg);
+    }
+    is_head = false;
+  }
+
+  info_log("rank_based_plannerの作業が無くなったため終了します");
 }
 
 ConcurrentQueue<PlannerMessage> PlannerManager::messages;
