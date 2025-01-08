@@ -1,5 +1,6 @@
 #pragma once
 #include "concurrent_queue.hpp"
+#include "thread_pool.hpp"
 #include "transaction.hpp"
 #include "types.hpp"
 #include <condition_variable>
@@ -78,6 +79,11 @@ using ExecutorMessage =
 class Executor {
 private:
   /**
+   * 実際に更新処理を担うスレッドのプール
+   */
+  ThreadPool thread_pool;
+
+  /**
    * Executorが管理しているクラスター
    * トランザクションID -> Message
    */
@@ -89,14 +95,30 @@ private:
    */
   std::map<ID, std::set<ID>> transaction_updatings;
 
+  /**
+   * トランザクションの状態管理の排他ロック
+   */
+  std::mutex transaction_state_mtx;
+
   std::map<ID, std::vector<std::function<void(ID)>>>
       before_update_hooks_buffers;
 
   std::vector<std::function<void(ID)>> before_update_hooks;
+  /**
+   * before_update_hooksの排他ロック
+   */
+  std::mutex before_update_hooks_mtx;
 
   static void invoke_after_build_hooks();
 
+  /**
+   * 更新開始前に実行されるよう登録されたhookを実行する
+   */
+  void invoke_before_update_hooks(ID);
+
 public:
+  Executor();
+
   /**
    * Executorが起動していない場合に起動する
    */

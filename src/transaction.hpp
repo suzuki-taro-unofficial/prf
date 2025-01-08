@@ -115,6 +115,11 @@ private:
    */
   void start_updating();
 
+  /**
+   * 更新処理のときは排他ロックを取る
+   */
+  std::mutex mtx;
+
   InnerTransaction(ID id, ID updating_cluster);
 
 public:

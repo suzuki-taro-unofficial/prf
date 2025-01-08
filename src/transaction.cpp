@@ -5,6 +5,7 @@
 #include "logger.hpp"
 #include "time_invariant_values.hpp"
 #include <atomic>
+#include <mutex>
 
 namespace prf {
 
@@ -14,6 +15,7 @@ bool InnerTransaction::is_in_updating() {
 
 InnerTransaction *
 InnerTransaction::generate_sub_transaction(ID updating_cluster) {
+  std::lock_guard<std::mutex> lock(this->mtx);
   InnerTransaction *trans = new InnerTransaction(id, updating_cluster);
   for (auto x : targets_outside_current_cluster[updating_cluster]) {
     trans->register_update(x);
@@ -105,6 +107,7 @@ void InnerTransaction::start_updating() {
 std::set<ID> InnerTransaction::register_execution_result(ExecuteResult result) {
   assert(not this->is_in_updating() &&
          "更新用のトランザクションで呼び出すことを想定していません");
+  std::lock_guard<std::mutex> lock(this->mtx);
   std::set<ID> res;
   for (auto clustered_tivs : result.targets) {
     ID cluster_id = clustered_tivs.first;
