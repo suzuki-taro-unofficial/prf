@@ -3,17 +3,9 @@
 #include "prf.hpp"
 #include "stream.hpp"
 #include "string"
+#include "test_utils.hpp"
 #include "transaction.hpp"
 #include <cassert>
-
-// リソースの初期化をしてテストを実行後、バックグラウンドのスレッドを停止する
-#define run_test(func)                                                         \
-  do {                                                                         \
-    prf::initialize();                                                         \
-    info_log("テスト %s を実行します", #func);                                 \
-    func();                                                                    \
-    prf::stop_execution();                                                     \
-  } while (false)
 
 void test_1() {
   prf::CellSink<int> c1(3);

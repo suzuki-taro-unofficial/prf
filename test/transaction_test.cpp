@@ -1,6 +1,7 @@
 #include "cluster.hpp"
 #include "prf.hpp"
 #include "stream.hpp"
+#include "test_utils.hpp"
 #include "transaction.hpp"
 #include <atomic>
 #include <chrono>
@@ -8,15 +9,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
-// リソースの初期化をしてテストを実行後、バックグラウンドのスレッドを停止する
-#define run_test(func)                                                         \
-  do {                                                                         \
-    prf::initialize();                                                         \
-    info_log("テスト %s を実行します", #func);                                 \
-    func();                                                                    \
-    prf::stop_execution();                                                     \
-  } while (false)
 
 void test_1() {
   std::string sum = "";

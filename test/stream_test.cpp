@@ -2,19 +2,10 @@
 #include "logger.hpp"
 #include "prf.hpp"
 #include "stream.hpp"
-#include "thread.hpp"
+#include "test_utils.hpp"
 #include "transaction.hpp"
 #include <cassert>
 #include <string>
-
-// リソースの初期化をしてテストを実行後、バックグラウンドのスレッドを停止する
-#define run_test(func)                                                         \
-  do {                                                                         \
-    prf::initialize();                                                         \
-    info_log("テスト %s を実行します", #func);                                 \
-    func();                                                                    \
-    prf::stop_execution();                                                     \
-  } while (false)
 
 void test_1() {
   prf::StreamSink<int> s1;
