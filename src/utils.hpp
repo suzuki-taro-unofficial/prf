@@ -1,5 +1,8 @@
 #include "types.hpp"
+#include <atomic>
+#include <condition_variable>
 #include <map>
+#include <mutex>
 #include <type_traits>
 
 namespace prf {
@@ -30,4 +33,38 @@ template <class T, class U> std::map<U, T> transpose(std::map<T, U> m) {
   }
   return res;
 }
+
+namespace utils {
+/**
+ * スレッド間で待つのに使うクラス
+ */
+class Waiter {
+private:
+  std::atomic_bool already_done;
+  std::mutex mtx;
+  std::condition_variable cond;
+
+public:
+  Waiter(const Waiter &) = delete;
+  Waiter &operator=(const Waiter &) = delete;
+
+  Waiter();
+  ~Waiter();
+
+  /**
+   * 待機しているスレッドに終了したことを通知する
+   */
+  void done();
+
+  /**
+   *  終了するまで大気する
+   */
+  void wait();
+
+  /**
+   * 終了しているかを確認する
+   */
+  bool sample();
+};
+} // namespace utils
 } // namespace prf
