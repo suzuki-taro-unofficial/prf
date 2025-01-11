@@ -30,8 +30,5 @@ if(PRF_DEBUG)
   add_link_options(-fsanitize=address -g -Wstack-protector)
 endif()
 
-# add pthread dependency
-add_compile_options(-lpthread)
-
 add_subdirectory(src)
 add_subdirectory(test)

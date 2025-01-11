@@ -5,3 +5,4 @@ file(GLOB prf_header "prf/*.hpp")
 
 add_library(prf STATIC ${prf_source})
 target_include_directories(prf PUBLIC ./)
+target_link_libraries(prf PUBLIC "-pthread")
