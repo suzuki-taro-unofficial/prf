@@ -34,6 +34,8 @@ template <class T, class U> std::map<U, T> transpose(std::map<T, U> m) {
   return res;
 }
 
+class Unit {};
+
 namespace utils {
 /**
  * スレッド間で待つのに使うクラス
