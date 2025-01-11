@@ -1,8 +1,8 @@
-#include "node.hpp"
-#include "cluster.hpp"
-#include "logger.hpp"
-#include "union_find.hpp"
-#include "utils.hpp"
+#include "prf/node.hpp"
+#include "prf/cluster.hpp"
+#include "prf/logger.hpp"
+#include "prf/union_find.hpp"
+#include "prf/utils.hpp"
 #include <algorithm>
 #include <cassert>
 #include <map>

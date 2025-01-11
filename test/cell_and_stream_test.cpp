@@ -1,8 +1,8 @@
-#include "cell.hpp"
-#include "prf.hpp"
-#include "stream.hpp"
+#include "prf/cell.hpp"
+#include "prf/prf.hpp"
+#include "prf/stream.hpp"
 #include "test_utils.hpp"
-#include "transaction.hpp"
+#include "prf/transaction.hpp"
 #include <cassert>
 #include <string>
 

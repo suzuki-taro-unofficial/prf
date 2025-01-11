@@ -1,5 +1,5 @@
 #include "cassert"
-#include "rank.hpp"
+#include "prf/rank.hpp"
 
 void ensure_after_test1() {
   prf::Rank rank1;

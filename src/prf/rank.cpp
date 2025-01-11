@@ -1,4 +1,4 @@
-#include "rank.hpp"
+#include "prf/rank.hpp"
 
 namespace prf {
 Rank::Rank() : value(0) {}

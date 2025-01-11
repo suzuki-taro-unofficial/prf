@@ -1,4 +1,4 @@
-#include "union_find.hpp"
+#include "prf/union_find.hpp"
 
 namespace prf {
 UnionFind::UnionFind(u64 size) : size(size), parents(size) {

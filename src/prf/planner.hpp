@@ -1,8 +1,8 @@
 #pragma once
-#include "concurrent_queue.hpp"
-#include "executor.hpp"
-#include "rank.hpp"
-#include "types.hpp"
+#include "prf/concurrent_queue.hpp"
+#include "prf/executor.hpp"
+#include "prf/rank.hpp"
+#include "prf/types.hpp"
 #include <atomic>
 #include <deque>
 #include <map>

@@ -1,4 +1,4 @@
-#include "prf.hpp"
+#include "prf/prf.hpp"
 
 // リソースの初期化をしてテストを実行後、バックグラウンドのスレッドを停止してフラグを初期化する
 #define run_test(func)                                                         \

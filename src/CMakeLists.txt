@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
-file(GLOB prf_source "*.cpp")
-file(GLOB prf_header "*.hpp")
+file(GLOB prf_source "prf/*.cpp")
+file(GLOB prf_header "prf/*.hpp")
 
 add_library(prf STATIC ${prf_source})
 target_include_directories(prf PUBLIC ./)

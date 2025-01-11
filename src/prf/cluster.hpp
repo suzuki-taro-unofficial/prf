@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.hpp"
+#include "prf/types.hpp"
 
 namespace prf {
 // クラスタを管理するマネージャ

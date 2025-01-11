@@ -1,8 +1,8 @@
 #pragma once
 
-#include "node.hpp"
-#include "rank.hpp"
-#include "types.hpp"
+#include "prf/node.hpp"
+#include "prf/rank.hpp"
+#include "prf/types.hpp"
 
 namespace prf {
 /**

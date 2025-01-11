@@ -1,5 +1,5 @@
-#include "node.hpp"
-#include "rank.hpp"
+#include "prf/node.hpp"
+#include "prf/rank.hpp"
 
 #include <cassert>
 

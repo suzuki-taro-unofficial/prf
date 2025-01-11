@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rank.hpp"
-#include "types.hpp"
+#include "prf/rank.hpp"
+#include "prf/types.hpp"
 #include <atomic>
 #include <vector>
 
