@@ -83,8 +83,9 @@ protected:
 
   /**
    * CellLoopで利用される初期値を与えずにインスタンスを生成するもの
+   * 第二引数はダミー値です
    */
-  Cell(ID);
+  Cell(ID, bool);
 
 public:
   Cell(CellInternal<T> *internal);
@@ -336,12 +337,12 @@ template <class T> void CellSink<T>::send(T value) const {
 }
 
 template <class T>
-Cell<T>::Cell(ID cluster_id)
+Cell<T>::Cell(ID cluster_id, bool unuse)
     : internal(new CellInternal<T>(cluster_id,
                                    std::function<std::optional<T>(ID)>())) {}
 
 template <class T>
-CellLoop<T>::CellLoop() : Cell<T>(clusterManager.current_id()) {}
+CellLoop<T>::CellLoop() : Cell<T>(clusterManager.current_id(), false) {}
 
 template <class T> void CellLoop<T>::loop(Cell<T> c) {
   assert(not this->looped &&
