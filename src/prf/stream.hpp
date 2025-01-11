@@ -109,7 +109,7 @@ public:
     this->map([x](const T &tmp) -> U { return x; });
   }
 
-  template <class U> Stream<Stream<U>> snapshot(Cell<U> c) const {
+  template <class U> Stream<U> snapshot(Cell<U> c) const {
     return this->snapshot(c, [](const T &a, U b) -> U { return b; });
   }
 
