@@ -105,6 +105,10 @@ public:
 
   Cell<T> hold(T initial_value);
 
+  template <class U> Stream<U> map_to(U x) {
+    this->map([x](const T &tmp) -> U { return x; });
+  }
+
   template <class U1, class F>
   Stream<typename std::invoke_result<F, T &, U1 &>::type> snapshot(Cell<U1> c1,
                                                                    F f) {
