@@ -109,8 +109,58 @@ public:
 
   template <class F> void listen(F f);
 
-  template <class U, class F>
-  Cell<typename std::invoke_result<F, T &, U &>::type> lift(Cell<U> c2, F f);
+  template <class U1, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &>::type> lift(Cell<U1> c1, F f);
+
+  template <class U1, class U2, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, F f);
+
+  template <class U1, class U2, class U3, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f);
+
+  template <class U1, class U2, class U3, class U4, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f);
+
+  template <class U1, class U2, class U3, class U4, class U5, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5, F f);
+
+  template <class U1, class U2, class U3, class U4, class U5, class U6, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                   U6 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+       Cell<U6> c6, F f);
+
+  template <class U1, class U2, class U3, class U4, class U5, class U6,
+            class U7, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                   U7 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+       Cell<U6> c6, Cell<U7> c7, F f);
+
+  template <class U1, class U2, class U3, class U4, class U5, class U6,
+            class U7, class U8, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                   U7 &, U8 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f);
+
+  template <class U1, class U2, class U3, class U4, class U5, class U6,
+            class U7, class U8, class U9, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                   U7 &, U8 &, U9 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f);
+
+  template <class U1, class U2, class U3, class U4, class U5, class U6,
+            class U7, class U8, class U9, class U10, class F>
+  Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                   U7 &, U8 &, U9 &, U10 &>::type>
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10, F f);
 
   friend CellLoop<T>;
   template <class U> friend class Stream;
@@ -252,7 +302,8 @@ template <class T> void CellInternal<T>::refresh(ID transaction_id) {
   }
 }
 
-template <class T> void CellInternal<T>::finalize(InnerTransaction *transaction) {
+template <class T>
+void CellInternal<T>::finalize(InnerTransaction *transaction) {
   std::shared_ptr<T> value = this->unsafeSample(transaction->get_id());
   for (std::function<void(std::shared_ptr<T>)> &listener : listeners) {
     listener(value);
@@ -303,32 +354,6 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 }
 
 template <class T>
-template <class U, class F>
-Cell<typename std::invoke_result<F, T &, U &>::type> Cell<T>::lift(Cell<U> c2,
-                                                                   F f) {
-  using V = typename std::invoke_result<F, T &, U &>::type;
-  ID cluster_id = clusterManager.current_id();
-  std::function<std::optional<V>(ID)> updater =
-      [internal = this->internal, c2,
-       f](ID transaction_id) -> std::optional<V> {
-    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
-    std::optional<std::shared_ptr<T>> v1 = internal->sample(transaction_id);
-    if (not v1) {
-      return std::nullopt;
-    }
-    std::optional<std::shared_ptr<U>> v2 = c2.internal->sample(transaction_id);
-    if (not v2) {
-      return std::nullopt;
-    }
-    return f(**v1, **v2);
-  };
-  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
-  inter->listen(this->internal);
-  inter->listen(c2.internal);
-  return Cell<V>(inter);
-}
-
-template <class T>
 GlobalCellLoop<T>::GlobalCellLoop() : Cell<T>(clusterManager.current_id()) {}
 
 template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
@@ -351,6 +376,514 @@ template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
   };
   this->internal->global_listen(c.internal);
   this->internal->updater = updater;
+}
+
+template <class T>
+template <class U1, class F>
+Cell<typename std::invoke_result<F, T &, U1 &>::type> Cell<T>::lift(Cell<U1> c1,
+                                                                    F f) {
+  using V = typename std::invoke_result<F, T &, U1 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    return f(**v, **v1);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class U5, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+              F f) {
+  using V =
+      typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4, c5,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U5>> v5 = c5.internal->sample(transaction_id);
+    if (not v5) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4, **v5);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  inter->listen(c5.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class U5, class U6, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                 U6 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+              Cell<U6> c6, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                        U6 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4, c5, c6,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U5>> v5 = c5.internal->sample(transaction_id);
+    if (not v5) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U6>> v6 = c6.internal->sample(transaction_id);
+    if (not v6) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4, **v5, **v6);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  inter->listen(c5.internal);
+  inter->listen(c6.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
+          class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                 U7 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+              Cell<U6> c6, Cell<U7> c7, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                        U6 &, U7 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4, c5, c6, c7,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U5>> v5 = c5.internal->sample(transaction_id);
+    if (not v5) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U6>> v6 = c6.internal->sample(transaction_id);
+    if (not v6) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U7>> v7 = c7.internal->sample(transaction_id);
+    if (not v7) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4, **v5, **v6, **v7);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  inter->listen(c5.internal);
+  inter->listen(c6.internal);
+  inter->listen(c7.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
+          class U8, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                 U7 &, U8 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                        U6 &, U7 &, U8 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4, c5, c6, c7, c8,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U5>> v5 = c5.internal->sample(transaction_id);
+    if (not v5) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U6>> v6 = c6.internal->sample(transaction_id);
+    if (not v6) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U7>> v7 = c7.internal->sample(transaction_id);
+    if (not v7) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U8>> v8 = c8.internal->sample(transaction_id);
+    if (not v8) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4, **v5, **v6, **v7, **v8);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  inter->listen(c5.internal);
+  inter->listen(c6.internal);
+  inter->listen(c7.internal);
+  inter->listen(c8.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
+          class U8, class U9, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                 U7 &, U8 &, U9 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                        U6 &, U7 &, U8 &, U9 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4, c5, c6, c7, c8, c9,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U5>> v5 = c5.internal->sample(transaction_id);
+    if (not v5) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U6>> v6 = c6.internal->sample(transaction_id);
+    if (not v6) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U7>> v7 = c7.internal->sample(transaction_id);
+    if (not v7) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U8>> v8 = c8.internal->sample(transaction_id);
+    if (not v8) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U9>> v9 = c9.internal->sample(transaction_id);
+    if (not v9) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4, **v5, **v6, **v7, **v8, **v9);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  inter->listen(c5.internal);
+  inter->listen(c6.internal);
+  inter->listen(c7.internal);
+  inter->listen(c8.internal);
+  inter->listen(c9.internal);
+  return Cell<V>(inter);
+}
+
+template <class T>
+template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
+          class U8, class U9, class U10, class F>
+Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
+                                 U7 &, U8 &, U9 &, U10 &>::type>
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10,
+              F f) {
+  using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
+                                        U6 &, U7 &, U8 &, U9 &, U10 &>::type;
+  ID cluster_id = clusterManager.current_id();
+  std::function<std::optional<V>(ID)> updater =
+      [internal = this->internal, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
+       f](ID transaction_id) -> std::optional<V> {
+    // Loopを利用していると、片方のCellを初期化する前に呼び出される可能性があるので、nullのときは同じくnullを返す
+    std::optional<std::shared_ptr<T>> v = internal->sample(transaction_id);
+    if (not v) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U1>> v1 = c1.internal->sample(transaction_id);
+    if (not v1) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U2>> v2 = c2.internal->sample(transaction_id);
+    if (not v2) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U3>> v3 = c3.internal->sample(transaction_id);
+    if (not v3) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U4>> v4 = c4.internal->sample(transaction_id);
+    if (not v4) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U5>> v5 = c5.internal->sample(transaction_id);
+    if (not v5) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U6>> v6 = c6.internal->sample(transaction_id);
+    if (not v6) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U7>> v7 = c7.internal->sample(transaction_id);
+    if (not v7) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U8>> v8 = c8.internal->sample(transaction_id);
+    if (not v8) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U9>> v9 = c9.internal->sample(transaction_id);
+    if (not v9) {
+      return std::nullopt;
+    }
+    std::optional<std::shared_ptr<U10>> v10 =
+        c10.internal->sample(transaction_id);
+    if (not v10) {
+      return std::nullopt;
+    }
+    return f(**v, **v1, **v2, **v3, **v4, **v5, **v6, **v7, **v8, **v9, **v10);
+  };
+  CellInternal<V> *inter = new CellInternal<V>(cluster_id, updater);
+  inter->listen(this->internal);
+  inter->listen(c1.internal);
+  inter->listen(c2.internal);
+  inter->listen(c3.internal);
+  inter->listen(c4.internal);
+  inter->listen(c5.internal);
+  inter->listen(c6.internal);
+  inter->listen(c7.internal);
+  inter->listen(c8.internal);
+  inter->listen(c9.internal);
+  inter->listen(c10.internal);
+  return Cell<V>(inter);
 }
 
 } // namespace prf
