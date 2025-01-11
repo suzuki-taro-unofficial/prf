@@ -94,7 +94,8 @@ public:
    */
   Cell(T);
 
-  template <class F> Cell<typename std::invoke_result<F, T &>::type> map(F f) {
+  template <class F>
+  Cell<typename std::invoke_result<F, T &>::type> map(F f) const {
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<U(ID)> updater = [internal = this->internal,
@@ -107,60 +108,63 @@ public:
     return Cell<U>(inter);
   }
 
-  template <class F> void listen(F f);
+  template <class F> void listen(F f) const;
 
   template <class U1, class F>
-  Cell<typename std::invoke_result<F, T &, U1 &>::type> lift(Cell<U1> c1, F f);
+  Cell<typename std::invoke_result<F, T &, U1 &>::type> lift(Cell<U1> c1,
+                                                             F f) const;
 
   template <class U1, class U2, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
-  lift(Cell<U1> c1, Cell<U2> c2, F f);
+  lift(Cell<U1> c1, Cell<U2> c2, F f) const;
 
   template <class U1, class U2, class U3, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
-  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f);
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) const;
 
   template <class U1, class U2, class U3, class U4, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
-  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f);
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) const;
 
   template <class U1, class U2, class U3, class U4, class U5, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
-  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5, F f);
+  lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
+       F f) const;
 
   template <class U1, class U2, class U3, class U4, class U5, class U6, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                    U6 &>::type>
   lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-       Cell<U6> c6, F f);
+       Cell<U6> c6, F f) const;
 
   template <class U1, class U2, class U3, class U4, class U5, class U6,
             class U7, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                    U7 &>::type>
   lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-       Cell<U6> c6, Cell<U7> c7, F f);
+       Cell<U6> c6, Cell<U7> c7, F f) const;
 
   template <class U1, class U2, class U3, class U4, class U5, class U6,
             class U7, class U8, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                    U7 &, U8 &>::type>
   lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f);
+       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) const;
 
   template <class U1, class U2, class U3, class U4, class U5, class U6,
             class U7, class U8, class U9, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                    U7 &, U8 &, U9 &>::type>
   lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f);
+       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) const;
 
   template <class U1, class U2, class U3, class U4, class U5, class U6,
             class U7, class U8, class U9, class U10, class F>
   Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                    U7 &, U8 &, U9 &, U10 &>::type>
   lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10, F f);
+       Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10,
+       F f) const;
 
   friend CellLoop<T>;
   template <class U> friend class Stream;
@@ -174,7 +178,7 @@ public:
   // 初期値有でCellSinkを初期化する
   CellSink(T);
 
-  void send(T value);
+  void send(T value) const;
 };
 
 template <class T> class CellLoop : public Cell<T> {
@@ -318,7 +322,7 @@ Cell<T>::Cell(T initial_value)
     : internal(
           new CellInternal<T>(clusterManager.current_id(), initial_value)) {}
 
-template <class T> template <class F> void Cell<T>::listen(F f) {
+template <class T> template <class F> void Cell<T>::listen(F f) const {
   this->internal->listenFromOuter([f](std::shared_ptr<T> v) -> void { f(*v); });
 }
 
@@ -327,7 +331,7 @@ CellSink<T>::CellSink(T initial_value)
     : prf::Cell<T>(new CellInternal<T>(ClusterManager::UNMANAGED_CLUSTER_ID,
                                        initial_value)) {}
 
-template <class T> void CellSink<T>::send(T value) {
+template <class T> void CellSink<T>::send(T value) const {
   this->internal->send(value);
 }
 
@@ -381,7 +385,7 @@ template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
 template <class T>
 template <class U1, class F>
 Cell<typename std::invoke_result<F, T &, U1 &>::type> Cell<T>::lift(Cell<U1> c1,
-                                                                    F f) {
+                                                                    F f) const {
   using V = typename std::invoke_result<F, T &, U1 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -407,7 +411,7 @@ Cell<typename std::invoke_result<F, T &, U1 &>::type> Cell<T>::lift(Cell<U1> c1,
 template <class T>
 template <class U1, class U2, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
-Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, F f) {
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -438,7 +442,7 @@ Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, F f) {
 template <class T>
 template <class U1, class U2, class U3, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
-Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) {
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -474,7 +478,7 @@ Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) {
 template <class T>
 template <class U1, class U2, class U3, class U4, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
-Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) {
+Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -516,7 +520,7 @@ template <class T>
 template <class U1, class U2, class U3, class U4, class U5, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-              F f) {
+              F f) const {
   using V =
       typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -565,7 +569,7 @@ template <class U1, class U2, class U3, class U4, class U5, class U6, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                  U6 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-              Cell<U6> c6, F f) {
+              Cell<U6> c6, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -620,7 +624,7 @@ template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-              Cell<U6> c6, Cell<U7> c7, F f) {
+              Cell<U6> c6, Cell<U7> c7, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -680,7 +684,7 @@ template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &, U8 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) {
+              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &, U8 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -745,7 +749,7 @@ template <class U1, class U2, class U3, class U4, class U5, class U6, class U7,
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &, U8 &, U9 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) {
+              Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &, U8 &, U9 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -816,7 +820,7 @@ Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &, U8 &, U9 &, U10 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10,
-              F f) {
+              F f) const {
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &, U8 &, U9 &, U10 &>::type;
   ID cluster_id = clusterManager.current_id();

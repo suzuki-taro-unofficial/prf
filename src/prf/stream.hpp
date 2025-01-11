@@ -81,7 +81,7 @@ public:
   Stream();
 
   template <class F>
-  Stream<typename std::invoke_result<F, T &>::type> map(F f) {
+  Stream<typename std::invoke_result<F, T &>::type> map(F f) const {
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<U>(ID)> updater = [internal = this->internal,
@@ -97,21 +97,21 @@ public:
     return Stream<U>(inter);
   }
 
-  template <class F> void listen(F f);
+  template <class F> void listen(F f) const;
 
-  template <class F> Stream<T> merge(Stream<T> s2, F f);
+  template <class F> Stream<T> merge(Stream<T> s2, F f) const;
 
-  Stream<T> or_else(Stream<T> s2);
+  Stream<T> or_else(Stream<T> s2) const;
 
-  Cell<T> hold(T initial_value);
+  Cell<T> hold(T initial_value) const;
 
-  template <class U> Stream<U> map_to(U x) {
+  template <class U> Stream<U> map_to(U x) const {
     this->map([x](const T &tmp) -> U { return x; });
   }
 
   template <class U1, class F>
   Stream<typename std::invoke_result<F, T &, U1 &>::type> snapshot(Cell<U1> c1,
-                                                                   F f) {
+                                                                   F f) const {
     using V = typename std::invoke_result<F, T &, U1 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater = [internal = this->internal,
@@ -130,7 +130,7 @@ public:
 
   template <class U1, class U2, class F>
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
-  snapshot(Cell<U1> c1, Cell<U2> c2, F f) {
+  snapshot(Cell<U1> c1, Cell<U2> c2, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -151,7 +151,7 @@ public:
 
   template <class U1, class U2, class U3, class F>
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
-  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) {
+  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -174,7 +174,7 @@ public:
 
   template <class U1, class U2, class U3, class U4, class F>
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
-  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) {
+  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -201,7 +201,7 @@ public:
   Stream<
       typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           F f) {
+           F f) const {
     using V =
         typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -231,7 +231,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                      U6 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, F f) {
+           Cell<U6> c6, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -265,7 +265,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                      U7 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, Cell<U7> c7, F f) {
+           Cell<U6> c6, Cell<U7> c7, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -301,7 +301,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                      U7 &, U8 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) {
+           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -339,7 +339,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                      U7 &, U8 &, U9 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) {
+           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &, U9 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -380,7 +380,7 @@ public:
                                      U7 &, U8 &, U9 &, U10 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
            Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10,
-           F f) {
+           F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &, U9 &, U10 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -417,9 +417,9 @@ public:
     return Stream<V>(inter);
   }
 
-  template <class F> Stream<T> filter(F f);
+  template <class F> Stream<T> filter(F f) const;
 
-  Stream<T> gate(Cell<bool>);
+  Stream<T> gate(Cell<bool>) const;
 
   friend StreamLoop<T>;
   template <class U> friend class Cell;
@@ -432,7 +432,7 @@ private:
 public:
   StreamSink();
 
-  void send(T value);
+  void send(T value) const;
 };
 
 template <class T> class StreamLoop : public Stream<T> {
@@ -539,13 +539,13 @@ template <class T>
 Stream<T>::Stream()
     : internal(new StreamInternal<T>(clusterManager.current_id())) {}
 
-template <class T> template <class F> void Stream<T>::listen(F f) {
+template <class T> template <class F> void Stream<T>::listen(F f) const {
   this->internal->listenFromOuter([f](std::shared_ptr<T> v) -> void { f(*v); });
 }
 
 template <class T>
 template <class F>
-Stream<T> Stream<T>::merge(Stream<T> s2, F f) {
+Stream<T> Stream<T>::merge(Stream<T> s2, F f) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [internal = this->internal, s2,
                                                  f](ID id) -> T {
@@ -565,11 +565,11 @@ Stream<T> Stream<T>::merge(Stream<T> s2, F f) {
   return Stream<T>(inter);
 }
 
-template <class T> Stream<T> Stream<T>::or_else(Stream<T> s2) {
+template <class T> Stream<T> Stream<T>::or_else(Stream<T> s2) const {
   return this->merge(s2, [](T x, T y) -> T { return x; });
 }
 
-template <class T> Cell<T> Stream<T>::hold(T initial_value) {
+template <class T> Cell<T> Stream<T>::hold(T initial_value) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater =
       [internal = this->internal](ID id) -> T {
@@ -582,7 +582,7 @@ template <class T> Cell<T> Stream<T>::hold(T initial_value) {
   return Cell<T>(inter);
 }
 
-template <class T> template <class F> Stream<T> Stream<T>::filter(F f) {
+template <class T> template <class F> Stream<T> Stream<T>::filter(F f) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  f](ID id) -> std::optional<T> {
@@ -602,7 +602,7 @@ template <class T> Stream<T> filterOptional(Stream<std::optional<T>> s) {
       .map([](std::optional<T> x) -> T { return *x; });
 }
 
-template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) {
+template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  c](ID id) -> std::optional<T> {
@@ -624,7 +624,7 @@ StreamSink<T>::StreamSink()
     : prf::Stream<T>(
           new StreamInternal<T>(ClusterManager::UNMANAGED_CLUSTER_ID)) {}
 
-template <class T> void StreamSink<T>::send(T value) {
+template <class T> void StreamSink<T>::send(T value) const {
   this->internal->send(value);
 }
 
