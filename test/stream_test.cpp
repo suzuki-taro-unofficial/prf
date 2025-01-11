@@ -145,7 +145,7 @@ void test_6() {
   int sum1 = 0;
   s4.listen([&sum1](int n) -> void { sum1 += n; });
 
-  prf::Stream<int> s5 = s2.orElse(s3);
+  prf::Stream<int> s5 = s2.or_else(s3);
   int sum2 = 0;
   s5.listen([&sum2](int n) -> void { sum2 += n; });
 
@@ -172,7 +172,7 @@ void test_7() {
   int sum1 = 0;
   s3.listen([&sum1](int n) -> void { sum1 += n; });
 
-  prf::Stream<int> s4 = s1.orElse(s2);
+  prf::Stream<int> s4 = s1.or_else(s2);
   int sum2 = 0;
   s4.listen([&sum2](int n) -> void { sum2 += n; });
 

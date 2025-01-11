@@ -101,7 +101,7 @@ public:
 
   template <class F> Stream<T> merge(Stream<T> s2, F f);
 
-  Stream<T> orElse(Stream<T> s2);
+  Stream<T> or_else(Stream<T> s2);
 
   Cell<T> hold(T initial_value);
 
@@ -565,7 +565,7 @@ Stream<T> Stream<T>::merge(Stream<T> s2, F f) {
   return Stream<T>(inter);
 }
 
-template <class T> Stream<T> Stream<T>::orElse(Stream<T> s2) {
+template <class T> Stream<T> Stream<T>::or_else(Stream<T> s2) {
   return this->merge(s2, [](T x, T y) -> T { return x; });
 }
 
