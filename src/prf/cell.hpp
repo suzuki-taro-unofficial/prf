@@ -81,11 +81,6 @@ template <class T> class Cell {
 protected:
   CellInternal<T> *internal;
 
-  /**
-   * CellLoopで利用される初期値を与えずにインスタンスを生成するもの
-   */
-  Cell(ID);
-
 public:
   Cell(CellInternal<T> *internal);
 
@@ -334,11 +329,6 @@ CellSink<T>::CellSink(T initial_value)
 template <class T> void CellSink<T>::send(T value) const {
   this->internal->send(value);
 }
-
-template <class T>
-Cell<T>::Cell(ID cluster_id)
-    : internal(new CellInternal<T>(cluster_id,
-                                   std::function<std::optional<T>(ID)>())) {}
 
 template <class T>
 CellLoop<T>::CellLoop() : Cell<T>(clusterManager.current_id()) {}
