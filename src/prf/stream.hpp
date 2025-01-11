@@ -109,6 +109,10 @@ public:
     this->map([x](const T &tmp) -> U { return x; });
   }
 
+  template <class U> Stream<Stream<U>> snapshot(Cell<U> c) const {
+    return this->snapshot(c, [](const T &a, U b) -> U { return b; });
+  }
+
   template <class U1, class F>
   Stream<typename std::invoke_result<F, T &, U1 &>::type> snapshot(Cell<U1> c1,
                                                                    F f) const {
