@@ -2,9 +2,9 @@
 #include "prf/cluster.hpp"
 #include "prf/prf.hpp"
 #include "prf/stream.hpp"
+#include "prf/transaction.hpp"
 #include "string"
 #include "test_utils.hpp"
-#include "prf/transaction.hpp"
 #include <cassert>
 
 void test_1() {
@@ -83,12 +83,12 @@ void test_4() {
   prf::GlobalCellLoop<int> cg;
 
   // GlobalCellLoopはクラスターを越えても動く
-  prf::Cluster *cluster = new prf::Cluster();
+  prf::Cluster cluster;
   prf::StreamSink<int> s1;
   prf::Stream<int> s2 =
       s1.snapshot(cg, [](int n, int m) -> int { return n + m; });
   cg.loop(s2.hold(0));
-  delete cluster;
+  cluster.close();
 
   prf::build();
 

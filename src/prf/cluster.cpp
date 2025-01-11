@@ -1,4 +1,5 @@
 #include "prf/cluster.hpp"
+#include <cassert>
 
 namespace prf {
 // ClusterManager
@@ -40,6 +41,16 @@ ClusterManager clusterManager = ClusterManager();
 const ID ClusterManager::UNMANAGED_CLUSTER_ID = 0;
 
 // class Cluster
-Cluster::Cluster() { clusterManager.enter_cluster(); }
-Cluster::~Cluster() { clusterManager.exit_cluster(); }
+void Cluster::close() {
+  assert(not this->closed && "既にクラスターは終了しています");
+  this->closed = true;
+  clusterManager.exit_cluster();
+}
+Cluster::Cluster() : closed(false) { clusterManager.enter_cluster(); }
+Cluster::~Cluster() {
+  if (this->closed) {
+    return;
+  }
+  clusterManager.exit_cluster();
+}
 } // namespace prf

@@ -34,7 +34,18 @@ extern ClusterManager clusterManager;
 // クラスタの範囲を示すためのクラス
 // このクラスのインスタンスが生成されてから消えるまでを一つのクラスタとする
 class Cluster {
+private:
+  /**
+   * 既にこのクラスタは終了しているか
+   */
+  bool closed;
+
 public:
+  /**
+   * 本来とは違うタイミングでクラスターを終了する
+   */
+  void close();
+
   Cluster();
   ~Cluster();
 };
