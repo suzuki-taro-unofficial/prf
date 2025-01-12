@@ -359,7 +359,8 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 }
 
 template <class T>
-GlobalCellLoop<T>::GlobalCellLoop() : Cell<T>(clusterManager.current_id()) {}
+GlobalCellLoop<T>::GlobalCellLoop()
+    : Cell<T>(clusterManager.current_id(), false) {}
 
 template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
   assert(not this->looped &&
