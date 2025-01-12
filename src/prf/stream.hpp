@@ -610,7 +610,11 @@ template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  c](ID id) -> std::optional<T> {
-    if (not *c.internal->unsafeSample(id)) {
+    std::optional<std::shared_ptr<T>> value = c.internal->sample(id);
+    if (not value) {
+      return std::nullopt;
+    }
+    if (not **value) {
       return std::nullopt;
     }
     return *internal->unsafeSample(id);
