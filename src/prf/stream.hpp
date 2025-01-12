@@ -84,8 +84,8 @@ public:
   Stream<typename std::invoke_result<F, T &>::type> map(F f) const {
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<U>(ID)> updater = [internal = this->internal,
-                                                   f](ID transaction_id) {
+    std::function<std::optional<U>(ID)> updater =
+        [internal = this->internal, f](ID transaction_id) -> std::optional<U> {
       std::optional<std::shared_ptr<T>> value =
           internal->sample(transaction_id);
       assert(value &&
@@ -118,8 +118,9 @@ public:
                                                                    F f) const {
     using V = typename std::invoke_result<F, T &, U1 &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<V>(ID)> updater = [internal = this->internal,
-                                                   c1, f](ID transaction_id) {
+    std::function<std::optional<V>(ID)> updater =
+        [internal = this->internal, c1,
+         f](ID transaction_id) -> std::optional<V> {
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
       std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
       return f(*v, *v1);
@@ -138,12 +139,13 @@ public:
     using V = typename std::invoke_result<F, T &, U1 &, U2 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
-        [internal = this->internal, c1, c2, f](ID transaction_id) {
-          std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
-          std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
-          return f(*v, *v1, *v2);
-        };
+        [internal = this->internal, c1, c2,
+         f](ID transaction_id) -> std::optional<V> {
+      std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
+      std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
+      return f(*v, *v1, *v2);
+    };
     StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
     inter->listen(this->internal);
     // snapshotはCellの値が変化したときに動くものでは無いので child_to()
@@ -159,13 +161,14 @@ public:
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
-        [internal = this->internal, c1, c2, c3, f](ID transaction_id) {
-          std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
-          std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
-          return f(*v, *v1, *v2, *v3);
-        };
+        [internal = this->internal, c1, c2, c3,
+         f](ID transaction_id) -> std::optional<V> {
+      std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
+      std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
+      return f(*v, *v1, *v2, *v3);
+    };
     StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
     inter->listen(this->internal);
     // snapshotはCellの値が変化したときに動くものでは無いので child_to()
@@ -182,14 +185,15 @@ public:
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
-        [internal = this->internal, c1, c2, c3, c4, f](ID transaction_id) {
-          std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
-          std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
-          return f(*v, *v1, *v2, *v3, *v4);
-        };
+        [internal = this->internal, c1, c2, c3, c4,
+         f](ID transaction_id) -> std::optional<V> {
+      std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
+      std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
+      return f(*v, *v1, *v2, *v3, *v4);
+    };
     StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
     inter->listen(this->internal);
     // snapshotはCellの値が変化したときに動くものでは無いので child_to()
@@ -210,15 +214,16 @@ public:
         typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
-        [internal = this->internal, c1, c2, c3, c4, c5, f](ID transaction_id) {
-          std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
-          std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U5> v5 = c5.internal->unsafeSample(transaction_id);
-          return f(*v, *v1, *v2, *v3, *v4, *v5);
-        };
+        [internal = this->internal, c1, c2, c3, c4, c5,
+         f](ID transaction_id) -> std::optional<V> {
+      std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
+      std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U5> v5 = c5.internal->unsafeSample(transaction_id);
+      return f(*v, *v1, *v2, *v3, *v4, *v5);
+    };
     StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
     inter->listen(this->internal);
     // snapshotはCellの値が変化したときに動くものでは無いので child_to()
@@ -239,9 +244,9 @@ public:
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<V>(ID)> updater = [internal = this->internal,
-                                                   c1, c2, c3, c4, c5, c6,
-                                                   f](ID transaction_id) {
+    std::function<std::optional<V>(ID)> updater =
+        [internal = this->internal, c1, c2, c3, c4, c5, c6,
+         f](ID transaction_id) -> std::optional<V> {
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
       std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
       std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
@@ -273,9 +278,9 @@ public:
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<V>(ID)> updater = [internal = this->internal,
-                                                   c1, c2, c3, c4, c5, c6, c7,
-                                                   f](ID transaction_id) {
+    std::function<std::optional<V>(ID)> updater =
+        [internal = this->internal, c1, c2, c3, c4, c5, c6, c7,
+         f](ID transaction_id) -> std::optional<V> {
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
       std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
       std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
@@ -309,9 +314,9 @@ public:
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &>::type;
     ID cluster_id = clusterManager.current_id();
-    std::function<std::optional<V>(ID)> updater = [internal = this->internal,
-                                                   c1, c2, c3, c4, c5, c6, c7,
-                                                   c8, f](ID transaction_id) {
+    std::function<std::optional<V>(ID)> updater =
+        [internal = this->internal, c1, c2, c3, c4, c5, c6, c7, c8,
+         f](ID transaction_id) -> std::optional<V> {
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
       std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
       std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
@@ -349,19 +354,19 @@ public:
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
         [internal = this->internal, c1, c2, c3, c4, c5, c6, c7, c8, c9,
-         f](ID transaction_id) {
-          std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
-          std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U5> v5 = c5.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U6> v6 = c6.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U7> v7 = c7.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U8> v8 = c8.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U9> v9 = c9.internal->unsafeSample(transaction_id);
-          return f(*v, *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8, *v9);
-        };
+         f](ID transaction_id) -> std::optional<V> {
+      std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
+      std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U5> v5 = c5.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U6> v6 = c6.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U7> v7 = c7.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U8> v8 = c8.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U9> v9 = c9.internal->unsafeSample(transaction_id);
+      return f(*v, *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8, *v9);
+    };
     StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
     inter->listen(this->internal);
     // snapshotはCellの値が変化したときに動くものでは無いので child_to()
@@ -390,20 +395,20 @@ public:
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
         [internal = this->internal, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10,
-         f](ID transaction_id) {
-          std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
-          std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U5> v5 = c5.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U6> v6 = c6.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U7> v7 = c7.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U8> v8 = c8.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U9> v9 = c9.internal->unsafeSample(transaction_id);
-          std::shared_ptr<U10> v10 = c10.internal->unsafeSample(transaction_id);
-          return f(*v, *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8, *v9, *v10);
-        };
+         f](ID transaction_id) -> std::optional<V> {
+      std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
+      std::shared_ptr<U1> v1 = c1.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U2> v2 = c2.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U3> v3 = c3.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U4> v4 = c4.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U5> v5 = c5.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U6> v6 = c6.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U7> v7 = c7.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U8> v8 = c8.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U9> v9 = c9.internal->unsafeSample(transaction_id);
+      std::shared_ptr<U10> v10 = c10.internal->unsafeSample(transaction_id);
+      return f(*v, *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8, *v9, *v10);
+    };
     StreamInternal<V> *inter = new StreamInternal<V>(cluster_id, updater);
     inter->listen(this->internal);
     // snapshotはCellの値が変化したときに動くものでは無いので child_to()
@@ -552,7 +557,7 @@ template <class F>
 Stream<T> Stream<T>::merge(Stream<T> s2, F f) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [internal = this->internal, s2,
-                                                 f](ID id) -> T {
+                                                 f](ID id) -> std::optional<T> {
     std::optional<std::shared_ptr<T>> v1 = internal->sample(id);
     std::optional<std::shared_ptr<T>> v2 = s2.internal->sample(id);
     if (v1 and v2) {
@@ -644,7 +649,8 @@ template <class T> void StreamLoop<T>::loop(Stream<T> s) {
   this->looped = true;
 
   ID cluster_id = clusterManager.current_id();
-  std::function<T(ID)> updater = [s](ID transaction_id) {
+  std::function<std::optional<T>(ID)> updater =
+      [s](ID transaction_id) -> std::optional<T> {
     std::shared_ptr<T> res = s.internal->unsafeSample(transaction_id);
     return *res;
   };

@@ -350,7 +350,8 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 
   this->looped = true;
   ID cluster_id = clusterManager.current_id();
-  std::function<T(ID)> updater = [c](ID transaction_id) {
+  std::function<std::optional<T>(ID)> updater =
+      [c](ID transaction_id) -> std::optional<T> {
     return *c.internal->unsafeSample(transaction_id);
   };
   // 強引にupdaterを置き変えているがC++で綺麗なコードを書くことは諦める
@@ -369,7 +370,7 @@ template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
   this->looped = true;
   // 本来の用途を逸脱するが、設計の妥協としておく
   std::function<std::optional<T>(ID)> updater = [internal = this->internal,
-                                                 c](ID id) {
+                                                 c](ID id) -> std::optional<T> {
     assert(current_transaction != nullptr &&
            "トランザクションの外でlistenしています");
     T res = *c.internal->unsafeSample(id);
