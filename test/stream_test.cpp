@@ -2,8 +2,8 @@
 #include "prf/logger.hpp"
 #include "prf/prf.hpp"
 #include "prf/stream.hpp"
-#include "test_utils.hpp"
 #include "prf/transaction.hpp"
+#include "test_utils.hpp"
 #include <cassert>
 #include <string>
 
@@ -255,6 +255,42 @@ void test_9() {
   assert(sum == 6 && "filterOptionalが正しく動作している");
 }
 
+void test_10() {
+  prf::StreamSink<std::string> s1;
+  prf::StreamSink<float> s2;
+
+  prf::Cluster cluster;
+
+  prf::Stream<bool> s3 = s1.map_to(true).or_else(s2.map_to(false));
+
+  int sum = 0;
+
+  s3.listen([&sum](bool x) -> void {
+    if (x) {
+      sum += 1;
+    }
+  });
+
+  prf::build();
+
+  {
+    prf::Transaction trans;
+    s1.send("HOGE");
+  }
+  assert(sum == 1 && "map_toとor_elseが正しく動作している");
+  {
+    prf::Transaction trans;
+    s2.send(1.2);
+  }
+  assert(sum == 1 && "map_toとor_elseが正しく動作している");
+  {
+    prf::Transaction trans;
+    s1.send("HOGE");
+    s2.send(1.2);
+  }
+  assert(sum == 2 && "map_toとor_elseが正しく動作している");
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
@@ -265,4 +301,5 @@ int main() {
   run_test(test_7);
   run_test(test_8);
   run_test(test_9);
+  run_test(test_10);
 }

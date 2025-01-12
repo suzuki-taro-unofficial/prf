@@ -106,7 +106,7 @@ public:
   Cell<T> hold(T initial_value) const;
 
   template <class U> Stream<U> map_to(U x) const {
-    this->map([x](const T &tmp) -> U { return x; });
+    return this->map([x](const T &tmp) -> U { return x; });
   }
 
   template <class U> Stream<U> snapshot(Cell<U> c) const {
