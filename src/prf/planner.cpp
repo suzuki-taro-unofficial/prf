@@ -271,6 +271,9 @@ void rank_based_planner(
 
   // 先に産まれたトランザクションを順に割り当てていく
   for (size_t i = 0; i < transaction_states.size(); ++i) {
+    bool can_finish = is_head;
+    is_head = false;
+
     // 終了命令が来ていたら終了する
     if (stop.load()) {
       info_log("rank_based_plannerの作業を外部の信号により終了します");
@@ -310,12 +313,11 @@ void rank_based_planner(
       msg.cluster_id = future;
       executor_message_queue.push(msg);
     }
-    if (is_head and state.future.empty() and state.now.empty()) {
+    if (can_finish and state.future.empty() and state.now.empty()) {
       FinalizeTransactionMessage msg;
       msg.transaction_id = state.transaction_id;
       executor_message_queue.push(msg);
     }
-    is_head = false;
   }
 
   info_log("rank_based_plannerの作業が無くなったため終了します");
