@@ -82,9 +82,14 @@ protected:
 
   /**
    * CellLoopで利用される初期値を与えずにインスタンスを生成するもの
-   * 第二引数はダミー値です
    */
   Cell(ID, bool);
+
+  /**
+   * Loop系列か否か
+   * mapやliftをCellLoopに使うと容易に不適切な状態を作り出せるので実行時エラーにしておく
+   */
+  bool is_global_looper;
 
 public:
   Cell(CellInternal<T> *internal);
@@ -96,6 +101,9 @@ public:
 
   template <class F>
   Cell<typename std::invoke_result<F, T &>::type> map(F f) const {
+    if (this->is_global_looper) {
+      failure_log("Loop系のセルはmapできません");
+    }
     using U = typename std::invoke_result<F, T &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<U(ID)> updater = [internal = this->internal,
@@ -318,7 +326,8 @@ void CellInternal<T>::finalize(InnerTransaction *transaction) {
 }
 
 template <class T>
-Cell<T>::Cell(CellInternal<T> *internal) : internal(internal) {}
+Cell<T>::Cell(CellInternal<T> *internal)
+    : internal(internal), is_global_looper(false) {}
 
 template <class T>
 Cell<T>::Cell(T initial_value)
@@ -339,9 +348,10 @@ template <class T> void CellSink<T>::send(T value) const {
 }
 
 template <class T>
-Cell<T>::Cell(ID cluster_id, bool unuse)
+Cell<T>::Cell(ID cluster_id, bool is_looper)
     : internal(new CellInternal<T>(cluster_id,
-                                   std::function<std::optional<T>(ID)>())) {}
+                                   std::function<std::optional<T>(ID)>())),
+      is_global_looper(false) {}
 
 template <class T>
 CellLoop<T>::CellLoop()
@@ -365,7 +375,9 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 
 template <class T>
 GlobalCellLoop<T>::GlobalCellLoop()
-    : Cell<T>(clusterManager.current_id(), false), looped(false) {}
+    : Cell<T>(clusterManager.current_id(), false), looped(false) {
+  this->is_global_looper = true;
+}
 
 template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
   if (this->looped) {
@@ -395,6 +407,13 @@ template <class T>
 template <class U1, class F>
 Cell<typename std::invoke_result<F, T &, U1 &>::type> Cell<T>::lift(Cell<U1> c1,
                                                                     F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -421,6 +440,17 @@ template <class T>
 template <class U1, class U2, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -452,6 +482,21 @@ template <class T>
 template <class U1, class U2, class U3, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -488,6 +533,25 @@ template <class T>
 template <class U1, class U2, class U3, class U4, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type;
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<V>(ID)> updater =
@@ -530,6 +594,29 @@ template <class U1, class U2, class U3, class U4, class U5, class F>
 Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c5.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V =
       typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -579,6 +666,33 @@ Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                  U6 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               Cell<U6> c6, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c5.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c6.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -634,6 +748,37 @@ Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               Cell<U6> c6, Cell<U7> c7, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c5.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c6.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c7.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -694,6 +839,41 @@ Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &, U8 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c5.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c6.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c7.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c8.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &, U8 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -759,6 +939,45 @@ Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                  U7 &, U8 &, U9 &>::type>
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c5.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c6.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c7.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c8.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c9.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &, U8 &, U9 &>::type;
   ID cluster_id = clusterManager.current_id();
@@ -830,6 +1049,49 @@ Cell<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
 Cell<T>::lift(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
               Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10,
               F f) const {
+  if (this->is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c1.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c2.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c3.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c4.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c5.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c6.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c7.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c8.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c9.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
+
+  if (c10.is_global_looper) {
+    failure_log("Loop系のセルはliftに使えません");
+  }
   using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                         U6 &, U7 &, U8 &, U9 &, U10 &>::type;
   ID cluster_id = clusterManager.current_id();
