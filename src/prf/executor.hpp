@@ -3,6 +3,7 @@
 #include "prf/thread_pool.hpp"
 #include "prf/transaction.hpp"
 #include "prf/types.hpp"
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <map>
@@ -20,7 +21,7 @@ class InnerTransaction;
 class TransactionExecuteMessage {
   std::mutex mtx;
   std::condition_variable cond;
-  bool already_done;
+  std::atomic_bool already_done;
 
 public:
   /**

@@ -19,13 +19,13 @@ TransactionExecuteMessage::TransactionExecuteMessage(
 
 void TransactionExecuteMessage::done() {
   std::lock_guard<std::mutex> lock(mtx);
-  already_done = true;
+  this->already_done.store(true);
   cond.notify_all();
 }
 
 void TransactionExecuteMessage::wait() {
   std::unique_lock<std::mutex> lock(mtx);
-  cond.wait(lock, [this] { return this->already_done; });
+  cond.wait(lock, [this] { return this->already_done.load(); });
 }
 
 void Executor::initialize(std::map<ID, std::string> cluster_names) {
