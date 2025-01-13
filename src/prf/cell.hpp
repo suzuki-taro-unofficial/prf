@@ -55,6 +55,12 @@ public:
   std::shared_ptr<T> unsafeSample(ID transaction_id);
 
   /**
+   * 現在のtransactionより前に生成された値を取得する
+   * 存在しなかった場合は std::nullopt を返す
+   */
+  std::optional<std::shared_ptr<T>> sampleBefore(ID transaction_id);
+
+  /**
    * FRPの外からlistenする
    */
   void listenFromOuter(std::function<void(std::shared_ptr<T>)>);
@@ -284,6 +290,19 @@ std::shared_ptr<T> CellInternal<T>::unsafeSample(ID transaction_id) {
     failure_log("論理時刻に対応する値がStreamに存在しませんでした");
   }
   return *res;
+}
+
+template <class T>
+std::optional<std::shared_ptr<T>>
+CellInternal<T>::sampleBefore(ID transaction_id) {
+  std::lock_guard<std::mutex> lock(mtx);
+  // Cellは複数の論理時間に渡って値が存在するので、指定したトランザクション以前を探すことになる
+  auto itr = values.lower_bound(transaction_id);
+  if (itr == values.begin()) {
+    return std::nullopt;
+  }
+  --itr;
+  return itr->second;
 }
 
 template <class T>

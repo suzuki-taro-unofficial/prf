@@ -1,8 +1,8 @@
 #include "prf/cell.hpp"
 #include "prf/prf.hpp"
 #include "prf/stream.hpp"
-#include "test_utils.hpp"
 #include "prf/transaction.hpp"
+#include "test_utils.hpp"
 #include <cassert>
 #include <string>
 
@@ -61,10 +61,14 @@ void test_2() {
 
   {
     prf::Transaction trans;
-    s1.send(3);
+    s1.send(2);
+    // snapshotは一つ前の値を参照しているのでここでは使われない
     c1.send("QWERTY");
   }
-  assert(acc == "BCAXYZR" && "snapshotプリミティブが正しく動作している");
+  assert(acc == "BCAXYZZ" && "snapshotプリミティブが正しく動作している");
+
+  s1.send(3);
+  assert(acc == "BCAXYZZR" && "snapshotプリミティブが正しく動作している");
 }
 
 void test_3() {

@@ -207,7 +207,7 @@ Executor::Executor() : thread_pool(ThreadPool::create_suitable_pool()) {}
 void Executor::invoke_before_update_hooks(ID transaction_id) {
   std::lock_guard<std::mutex> lock(this->before_update_hooks_mtx);
   for (auto hook : this->before_update_hooks) {
-    hook(transaction_id);
+    hook(transaction_id - 1);
   }
   this->before_update_hooks.clear();
 }
