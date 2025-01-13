@@ -41,9 +41,7 @@ InnerTransaction::InnerTransaction() {
   updating_cluster = ClusterManager::UNMANAGED_CLUSTER_ID;
   inside_transaction = false;
   updating = false;
-  // 偶数だけ使う
-  // 奇数はGlobalCellLoopに予約されている
-  id = next_transaction_id.fetch_add(2);
+  id = next_transaction_id.fetch_add(1);
   current_transaction = this;
 }
 
@@ -150,8 +148,7 @@ void InnerTransaction::finalize() {
 
 ID InnerTransaction::get_id() { return id; }
 
-// 何かに使うかもしれないので0~9は予約しておく
-std::atomic_ulong next_transaction_id(10);
+std::atomic_ulong next_transaction_id(0);
 thread_local InnerTransaction *current_transaction = nullptr;
 
 JoinHandler::JoinHandler(TransactionExecuteMessage *message)

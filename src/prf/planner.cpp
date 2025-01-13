@@ -61,8 +61,7 @@ void PlannerManager::handleStartMessage(
     // はIDが連番で入ることを期待しているので、順番に入れる
     while (this->transaction_states.back().transaction_id <
            message.transaction_id) {
-      // トランザクションのIDは偶数だけ利用しているので
-      TransactionState add(this->transaction_states.back().transaction_id + 2);
+      TransactionState add(this->transaction_states.back().transaction_id + 1);
       this->transaction_states.push_back(add);
     }
   }
@@ -92,8 +91,7 @@ void PlannerManager::handleUpdateMessage(
 
   // transaction_statesは連番で入っていることを期待しているので
   // 下記のようにランダムアクセスできる
-  // IDは偶数だけなのでそこだけ注意
-  u64 idx = ((u64)id_arg - (u64)id_min) / 2;
+  u64 idx = (u64)id_arg - (u64)id_min;
   TransactionState &state = this->transaction_states[idx];
 
   for (const ID id : message.future) {

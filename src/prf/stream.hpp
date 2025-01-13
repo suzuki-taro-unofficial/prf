@@ -125,7 +125,7 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
@@ -151,13 +151,13 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
@@ -184,19 +184,19 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
@@ -224,25 +224,25 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
@@ -274,31 +274,31 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U5>> v5 =
-          c5.internal->sampleBefore(transaction_id);
+          c5.internal->sample(transaction_id);
       if (not v5.has_value()) {
         return std::nullopt;
       }
@@ -331,37 +331,37 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U5>> v5 =
-          c5.internal->sampleBefore(transaction_id);
+          c5.internal->sample(transaction_id);
       if (not v5.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U6>> v6 =
-          c6.internal->sampleBefore(transaction_id);
+          c6.internal->sample(transaction_id);
       if (not v6.has_value()) {
         return std::nullopt;
       }
@@ -396,43 +396,43 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U5>> v5 =
-          c5.internal->sampleBefore(transaction_id);
+          c5.internal->sample(transaction_id);
       if (not v5.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U6>> v6 =
-          c6.internal->sampleBefore(transaction_id);
+          c6.internal->sample(transaction_id);
       if (not v6.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U7>> v7 =
-          c7.internal->sampleBefore(transaction_id);
+          c7.internal->sample(transaction_id);
       if (not v7.has_value()) {
         return std::nullopt;
       }
@@ -468,49 +468,49 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U5>> v5 =
-          c5.internal->sampleBefore(transaction_id);
+          c5.internal->sample(transaction_id);
       if (not v5.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U6>> v6 =
-          c6.internal->sampleBefore(transaction_id);
+          c6.internal->sample(transaction_id);
       if (not v6.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U7>> v7 =
-          c7.internal->sampleBefore(transaction_id);
+          c7.internal->sample(transaction_id);
       if (not v7.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U8>> v8 =
-          c8.internal->sampleBefore(transaction_id);
+          c8.internal->sample(transaction_id);
       if (not v8.has_value()) {
         return std::nullopt;
       }
@@ -547,55 +547,55 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U5>> v5 =
-          c5.internal->sampleBefore(transaction_id);
+          c5.internal->sample(transaction_id);
       if (not v5.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U6>> v6 =
-          c6.internal->sampleBefore(transaction_id);
+          c6.internal->sample(transaction_id);
       if (not v6.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U7>> v7 =
-          c7.internal->sampleBefore(transaction_id);
+          c7.internal->sample(transaction_id);
       if (not v7.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U8>> v8 =
-          c8.internal->sampleBefore(transaction_id);
+          c8.internal->sample(transaction_id);
       if (not v8.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U9>> v9 =
-          c9.internal->sampleBefore(transaction_id);
+          c9.internal->sample(transaction_id);
       if (not v9.has_value()) {
         return std::nullopt;
       }
@@ -634,61 +634,61 @@ public:
       std::shared_ptr<T> v = internal->unsafeSample(transaction_id);
 
       std::optional<std::shared_ptr<U1>> v1 =
-          c1.internal->sampleBefore(transaction_id);
+          c1.internal->sample(transaction_id);
       if (not v1.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U2>> v2 =
-          c2.internal->sampleBefore(transaction_id);
+          c2.internal->sample(transaction_id);
       if (not v2.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U3>> v3 =
-          c3.internal->sampleBefore(transaction_id);
+          c3.internal->sample(transaction_id);
       if (not v3.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U4>> v4 =
-          c4.internal->sampleBefore(transaction_id);
+          c4.internal->sample(transaction_id);
       if (not v4.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U5>> v5 =
-          c5.internal->sampleBefore(transaction_id);
+          c5.internal->sample(transaction_id);
       if (not v5.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U6>> v6 =
-          c6.internal->sampleBefore(transaction_id);
+          c6.internal->sample(transaction_id);
       if (not v6.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U7>> v7 =
-          c7.internal->sampleBefore(transaction_id);
+          c7.internal->sample(transaction_id);
       if (not v7.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U8>> v8 =
-          c8.internal->sampleBefore(transaction_id);
+          c8.internal->sample(transaction_id);
       if (not v8.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U9>> v9 =
-          c9.internal->sampleBefore(transaction_id);
+          c9.internal->sample(transaction_id);
       if (not v9.has_value()) {
         return std::nullopt;
       }
 
       std::optional<std::shared_ptr<U10>> v10 =
-          c10.internal->sampleBefore(transaction_id);
+          c10.internal->sample(transaction_id);
       if (not v10.has_value()) {
         return std::nullopt;
       }
@@ -903,7 +903,7 @@ template <class T> Stream<T> Stream<T>::gate(Cell<bool> c) const {
   ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  c](ID id) -> std::optional<T> {
-    std::optional<std::shared_ptr<bool>> value = c.internal->sampleBefore(id);
+    std::optional<std::shared_ptr<bool>> value = c.internal->sample(id);
     if (not value) {
       return std::nullopt;
     }
