@@ -1,9 +1,10 @@
 #include "prf/cluster.hpp"
 #include "prf/prf.hpp"
 #include "prf/stream.hpp"
-#include "test_utils.hpp"
 #include "prf/transaction.hpp"
+#include "test_utils.hpp"
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <mutex>
 #include <string>
