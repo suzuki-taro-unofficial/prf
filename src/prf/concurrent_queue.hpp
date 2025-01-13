@@ -1,6 +1,5 @@
 #pragma once
 #include "prf/thread.hpp"
-#include <cassert>
 #include <condition_variable>
 #include <mutex>
 #include <optional>

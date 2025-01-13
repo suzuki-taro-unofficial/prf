@@ -1,6 +1,5 @@
 #include "prf/cluster.hpp"
 #include "logger.hpp"
-#include <cassert>
 
 namespace prf {
 // ClusterManager

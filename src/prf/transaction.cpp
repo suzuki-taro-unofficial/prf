@@ -1,5 +1,4 @@
 #include "prf/transaction.hpp"
-#include "cassert"
 #include "prf/cluster.hpp"
 #include "prf/executor.hpp"
 #include "prf/logger.hpp"
