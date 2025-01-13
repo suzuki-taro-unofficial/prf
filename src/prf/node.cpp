@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 namespace prf {
@@ -92,14 +93,23 @@ void NodeManager::split_cluster_by_associates() {
 
   std::map<u64, u64> unionfind_id2cluster_id = numbering(unionfind_ids);
 
+  std::map<ID, std::string> mapped_cluster_names;
+
   for (Node *node : nodes) {
     u64 unionfind_id = uf.get_parent(node2u64[node]);
     u64 cluster_id = unionfind_id2cluster_id[unionfind_id];
+    mapped_cluster_names[cluster_id] =
+        this->cluster_names[node->get_cluster_id()];
+    if (mapped_cluster_names[cluster_id] == "") {
+      mapped_cluster_names[cluster_id] = "NO_NAME";
+    }
     node->set_cluster_id(cluster_id);
   }
   // IDの再割り当てでSink系列のノードのクラスタIDがUNMANAGED_CLUSTER_IDじゃなくなったら現在そうであるクラスタとswapする
   if (sink_node != nullptr and
       sink_node->get_cluster_id() != ClusterManager::UNMANAGED_CLUSTER_ID) {
+    std::swap(mapped_cluster_names[sink_node->get_cluster_id()],
+              mapped_cluster_names[ClusterManager::UNMANAGED_CLUSTER_ID]);
     ID sink_id = sink_node->get_cluster_id();
     for (Node *node : nodes) {
       ID fixed_id = node->get_cluster_id();
@@ -111,6 +121,7 @@ void NodeManager::split_cluster_by_associates() {
       node->set_cluster_id(fixed_id);
     }
   }
+  this->cluster_names = mapped_cluster_names;
 }
 
 void NodeManager::generate_cluster_ranks() {
@@ -227,6 +238,15 @@ const std::vector<Rank> &NodeManager::get_cluster_ranks() {
     failure_log("クラスタのランクを知るにはビルドをしてください");
   }
   return cluster_ranks;
+}
+
+void NodeManager::register_cluster_name(ID cluster_id,
+                                        std::string cluster_name) {
+  this->cluster_names[cluster_id] = cluster_name;
+}
+
+std::map<ID, std::string> NodeManager::get_cluster_names() {
+  return this->cluster_names;
 }
 
 NodeManager *NodeManager::globalNodeManager = new NodeManager();

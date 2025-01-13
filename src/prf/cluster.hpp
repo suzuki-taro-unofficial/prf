@@ -1,6 +1,8 @@
 #pragma once
 
+#include "prf/node.hpp"
 #include "prf/types.hpp"
+#include <string>
 
 namespace prf {
 // クラスタを管理するマネージャ
@@ -48,5 +50,10 @@ public:
 
   Cluster();
   ~Cluster();
+
+  /**
+   * Clusterに名前を付けて作成する
+   */
+  Cluster(std::string);
 };
 } // namespace prf

@@ -1,5 +1,6 @@
 #include "prf/cluster.hpp"
 #include "logger.hpp"
+#include "prf/node.hpp"
 
 namespace prf {
 // ClusterManager
@@ -48,11 +49,17 @@ void Cluster::close() {
   this->closed = true;
   clusterManager.exit_cluster();
 }
-Cluster::Cluster() : closed(false) { clusterManager.enter_cluster(); }
+Cluster::Cluster() : Cluster("NO_NAME") {}
 Cluster::~Cluster() {
   if (this->closed) {
     return;
   }
   clusterManager.exit_cluster();
+}
+
+Cluster::Cluster(std::string name) : closed(false) {
+  clusterManager.enter_cluster();
+  NodeManager::globalNodeManager->register_cluster_name(
+      clusterManager.current_id(), name);
 }
 } // namespace prf

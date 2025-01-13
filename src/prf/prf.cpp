@@ -11,7 +11,7 @@ void build() {
   std::vector<Rank> ranks = NodeManager::globalNodeManager->get_cluster_ranks();
 
   PlannerManager::initialize(ranks);
-  Executor::initialize();
+  Executor::initialize(NodeManager::globalNodeManager->get_cluster_names());
 }
 
 /**

@@ -3,6 +3,8 @@
 #include "prf/rank.hpp"
 #include "prf/types.hpp"
 #include <atomic>
+#include <map>
+#include <string>
 #include <vector>
 
 namespace prf {
@@ -60,6 +62,11 @@ private:
   std::vector<Rank> cluster_ranks;
   bool already_build;
 
+  /**
+   * ID -> Clusterの名前
+   */
+  std::map<ID, std::string> cluster_names;
+
   // ノード間の関係性に基づいてクラスタの再割り当てを行なう
   void split_cluster_by_associates();
   // クラスタにランクを割り当てる
@@ -74,6 +81,13 @@ public:
   void register_node(Node *);
   // ノードの情報を元にグラフを構築する
   void build();
+
+  /**
+   * Clusterに名前を登録する
+   */
+  void register_cluster_name(ID, std::string);
+
+  std::map<ID, std::string> get_cluster_names();
 
   const std::vector<Rank> &get_cluster_ranks();
 

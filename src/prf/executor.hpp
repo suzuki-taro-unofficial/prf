@@ -116,13 +116,18 @@ private:
    */
   void invoke_before_update_hooks(ID);
 
+  /**
+   * クラスターの名前
+   */
+  std::map<ID, std::string> cluster_names;
+
 public:
-  Executor();
+  Executor(std::map<ID, std::string> cluster_names);
 
   /**
    * Executorが起動していない場合に起動する
    */
-  static void initialize();
+  static void initialize(std::map<ID, std::string> cluster_names);
 
   /**
    * Executorの処理を開始する

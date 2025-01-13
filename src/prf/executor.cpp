@@ -6,7 +6,9 @@
 #include "prf/thread_pool.hpp"
 #include "prf/time_invariant_values.hpp"
 #include "prf/transaction.hpp"
+#include <map>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <variant>
 
@@ -26,10 +28,10 @@ void TransactionExecuteMessage::wait() {
   cond.wait(lock, [this] { return this->already_done; });
 }
 
-void Executor::initialize() {
+void Executor::initialize(std::map<ID, std::string> cluster_names) {
   std::lock_guard<std::mutex> lock(executor_mutex);
   if (global_executor == nullptr) {
-    global_executor = new Executor();
+    global_executor = new Executor(cluster_names);
     // global_executorの処理はバックグラウンドのスレッドで行なう
     std::thread t([] {
       global_executor->start_loop();
@@ -94,8 +96,9 @@ void Executor::start_loop() {
       this->transaction_updatings[transaction_id].insert(cluster_id);
 
       info_log("クラスタの更新を依頼されました Transaction: %ld, "
-               "Cluster: %ld",
-               transaction_id, cluster_id);
+               "Cluster: %ld, name: %s",
+               transaction_id, cluster_id,
+               this->cluster_names[cluster_id].c_str());
 
       InnerTransaction *transaction =
           this->transactions[transaction_id]->transaction;
@@ -139,8 +142,9 @@ void Executor::start_loop() {
         }
 
         info_log("クラスタの更新が終了しました Transaction: %ld, "
-                 "Cluster: %ld",
-                 transaction_id, cluster_id);
+                 "Cluster: %ld, name: %s",
+                 transaction_id, cluster_id,
+                 this->cluster_names[cluster_id].c_str());
       });
       continue;
     }
@@ -202,7 +206,9 @@ ConcurrentQueue<ExecutorMessage> Executor::messages;
 Executor *Executor::global_executor = nullptr;
 std::mutex Executor::executor_mutex;
 
-Executor::Executor() : thread_pool(ThreadPool::create_suitable_pool()) {}
+Executor::Executor(std::map<ID, std::string> cluster_names)
+    : thread_pool(ThreadPool::create_suitable_pool()),
+      cluster_names(cluster_names) {}
 
 void Executor::invoke_before_update_hooks(ID transaction_id) {
   std::lock_guard<std::mutex> lock(this->before_update_hooks_mtx);
