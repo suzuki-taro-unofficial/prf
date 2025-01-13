@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <stdio.h>
 
 #ifdef SHOW_INFO_LOG
@@ -37,5 +38,5 @@
 #define LOG_AND_EXIT_MACRO(kind, ...)                                          \
   do {                                                                         \
     LOG_MACRO(kind, __VA_ARGS__);                                              \
-    exit(1);                                                                   \
+    std::exit(1);                                                              \
   } while (false)

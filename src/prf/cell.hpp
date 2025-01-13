@@ -51,7 +51,7 @@ public:
 
   /**
    * sample() と違いその論理時刻に値が存在することが保証される場合に呼び出す
-   * 無い時はassertのエラーで終了する
+   * 無い時はエラーで終了する
    */
   std::shared_ptr<T> unsafeSample(ID transaction_id);
 
@@ -273,7 +273,9 @@ std::optional<std::shared_ptr<T>> CellInternal<T>::sample(ID transaction_id) {
 template <class T>
 std::shared_ptr<T> CellInternal<T>::unsafeSample(ID transaction_id) {
   std::optional<std::shared_ptr<T>> res = this->sample(transaction_id);
-  assert(res && "論理時刻に対応する値がStreamに存在しませんでした");
+  if (not res.has_value()) {
+    failure_log("論理時刻に対応する値がStreamに存在しませんでした");
+  }
   return *res;
 }
 
@@ -294,8 +296,9 @@ template <class T> void CellInternal<T>::update(InnerTransaction *transaction) {
 
 template <class T> void CellInternal<T>::refresh(ID transaction_id) {
   std::lock_guard<std::mutex> lock(mtx);
-  assert(values.find(transaction_id) != values.end() &&
-         "このトランザクションで新しく値が設定されていません");
+  if (values.find(transaction_id) == values.end()) {
+    failure_log("このトランザクションで新しく値が設定されていません");
+  }
   // 指定されたTransactionより以前にある値を消去する
   while (true) {
     auto itr = values.begin();
@@ -342,11 +345,13 @@ Cell<T>::Cell(ID cluster_id, bool unuse)
                                    std::function<std::optional<T>(ID)>())) {}
 
 template <class T>
-CellLoop<T>::CellLoop() : Cell<T>(clusterManager.current_id(), false) {}
+CellLoop<T>::CellLoop()
+    : Cell<T>(clusterManager.current_id(), false), looped(false) {}
 
 template <class T> void CellLoop<T>::loop(Cell<T> c) {
-  assert(not this->looped &&
-         "CellLoopに対して複数回loopメソッドを呼び出しています");
+  if (this->looped) {
+    failure_log("CellLoopに対して複数回loopメソッドを呼び出しています");
+  }
 
   this->looped = true;
   ID cluster_id = clusterManager.current_id();
@@ -361,18 +366,20 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 
 template <class T>
 GlobalCellLoop<T>::GlobalCellLoop()
-    : Cell<T>(clusterManager.current_id(), false) {}
+    : Cell<T>(clusterManager.current_id(), false), looped(false) {}
 
 template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
-  assert(not this->looped &&
-         "GlobalCellLoopに対して複数回loopメソッドを呼び出しています");
+  if (this->looped) {
+    failure_log("GlobalCellLoopに対して複数回loopメソッドを呼び出しています");
+  }
 
   this->looped = true;
   // 本来の用途を逸脱するが、設計の妥協としておく
   std::function<std::optional<T>(ID)> updater = [internal = this->internal,
                                                  c](ID id) -> std::optional<T> {
-    assert(current_transaction != nullptr &&
-           "トランザクションの外でlistenしています");
+    if (current_transaction == nullptr) {
+      failure_log("トランザクションの外でlistenしています");
+    }
     T res = *c.internal->unsafeSample(id);
     current_transaction->register_before_update_hook(
         [internal, res](ID id) -> void {

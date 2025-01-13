@@ -31,8 +31,10 @@ InnerTransaction::InnerTransaction(ID id, ID updating_cluster)
 InnerTransaction::InnerTransaction() {
   // 既にトランザクションがある場合はそちらを使う
   if (current_transaction != nullptr) {
-    assert((not current_transaction->is_in_updating()) &&
-           "更新処理中にトランザクションを生成することはできません");
+    if (current_transaction->is_in_updating()) {
+      failure_log("更新処理中にトランザクションを生成することはできません");
+    }
+
     inside_transaction = true;
     id = current_transaction->get_id();
     return;
@@ -105,8 +107,9 @@ void InnerTransaction::start_updating() {
 }
 
 std::set<ID> InnerTransaction::register_execution_result(ExecuteResult result) {
-  assert(not this->is_in_updating() &&
-         "更新用のトランザクションで呼び出すことを想定していません");
+  if (this->is_in_updating()) {
+    failure_log("更新用のトランザクションで呼び出すことを想定していません");
+  }
   std::lock_guard<std::mutex> lock(this->mtx);
   std::set<ID> res;
   for (auto clustered_tivs : result.targets) {
@@ -125,8 +128,9 @@ std::set<ID> InnerTransaction::register_execution_result(ExecuteResult result) {
 }
 
 std::set<ID> InnerTransaction::target_clusters() {
-  assert(not this->is_in_updating() &&
-         "更新用のトランザクションで呼び出すことを想定していません");
+  if (this->is_in_updating()) {
+    failure_log("更新用のトランザクションで呼び出すことを想定していません");
+  }
   std::set<ID> res;
   for (auto &i : this->targets_outside_current_cluster) {
     res.insert(i.first);
@@ -185,9 +189,11 @@ Transaction::~Transaction() {
 }
 
 JoinHandler Transaction::get_join_handler() {
-  assert(this->inner != nullptr &&
-         "既にハンドラを取得しているか、このオブジェクトからJoinHandlerを取得す"
-         "ることはできません");
+  if (this->inner == nullptr) {
+    failure_log(
+        "既にハンドラを取得しているか、このオブジェクトからJoinHandlerを取得す"
+        "ることはできません");
+  }
 
   TransactionExecuteMessage *msg = new TransactionExecuteMessage(this->inner);
   ExecutorMessage emsg = msg;

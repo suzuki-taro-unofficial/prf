@@ -46,7 +46,7 @@ public:
 
   /**
    * sample() と違いその論理時刻に値が存在することが保証される場合に呼び出す
-   * 無い時はassertのエラーで終了する
+   * 無い時はエラーで終了する
    */
   std::shared_ptr<T> unsafeSample(ID transaction_id);
 
@@ -88,8 +88,10 @@ public:
         [internal = this->internal, f](ID transaction_id) -> std::optional<U> {
       std::optional<std::shared_ptr<T>> value =
           internal->sample(transaction_id);
-      assert(value &&
-             "mapメソッドでトランザクションに対応する値がありませんでした");
+      if (not value.has_value()) {
+        failure_log(
+            "mapメソッドでトランザクションに対応する値がありませんでした");
+      }
       return f(**value);
     };
     StreamInternal<U> *inter = new StreamInternal<U>(cluster_id, updater);
@@ -469,7 +471,7 @@ StreamInternal<T>::StreamInternal(ID cluster_id)
           cluster_id, (std::function<std::optional<T>(ID transaction_id)>)[](
                           ID transaction_id)
                           ->std::optional<T> {
-                            assert(1 == 2 && "無効なupdaterが登録されています");
+                            failure_log("無効なupdaterが登録されています");
                           }) {}
 
 template <class T> void StreamInternal<T>::send(T value) {
@@ -506,7 +508,9 @@ std::optional<std::shared_ptr<T>> StreamInternal<T>::sample(ID transaction_id) {
 template <class T>
 std::shared_ptr<T> StreamInternal<T>::unsafeSample(ID transaction_id) {
   std::optional<std ::shared_ptr<T>> res = this->sample(transaction_id);
-  assert(res && "論理時刻に対応する値がStreamに存在しませんでした");
+  if (not res.has_value()) {
+    failure_log("論理時刻に対応する値がStreamに存在しませんでした");
+  }
   return *res;
 }
 
@@ -641,11 +645,12 @@ template <class T> void StreamSink<T>::send(T value) const {
   this->internal->send(value);
 }
 
-template <class T> StreamLoop<T>::StreamLoop() : Stream<T>() {}
+template <class T> StreamLoop<T>::StreamLoop() : Stream<T>(), looped(false) {}
 
 template <class T> void StreamLoop<T>::loop(Stream<T> s) {
-  assert(not this->looped &&
-         "StreamLoopに対して複数回loopメソッドを呼び出しています");
+  if (this->looped) {
+    failure_log("StreamLoopに対して複数回loopメソッドを呼び出しています");
+  }
   this->looped = true;
 
   ID cluster_id = clusterManager.current_id();

@@ -27,8 +27,9 @@ const std::vector<Node *> &Node::get_loop_childs() { return loop_childs; }
 void Node::link_to(Node *other) { childs.push_back(other); }
 
 void Node::loop_child_to(Node *other) {
-  assert(this->get_cluster_id() == other->get_cluster_id() &&
-         "クラスタを跨いでループを作ることはできません");
+  if (this->get_cluster_id() != other->get_cluster_id()) {
+    failure_log("クラスタを跨いでループを作ることはできません");
+  }
   same_clusters.push_back(other);
   other->same_clusters.push_back(this);
   loop_childs.push_back(other);
@@ -209,8 +210,12 @@ void NodeManager::generate_in_cluster_ranks() {
 }
 
 void NodeManager::build() {
-  assert(this->nodes.size() > 0);
-  assert(not already_build && "ビルドは一度まで");
+  if (this->nodes.size() == 0) {
+    failure_log("ノードが登録されてません");
+  }
+  if (already_build) {
+    failure_log("ビルドは一度まで");
+  }
   already_build = true;
 
   split_cluster_by_associates();
@@ -219,7 +224,9 @@ void NodeManager::build() {
 }
 
 const std::vector<Rank> &NodeManager::get_cluster_ranks() {
-  assert(already_build && "クラスタのランクを知るにはビルドをしてください");
+  if (not already_build) {
+    failure_log("クラスタのランクを知るにはビルドをしてください");
+  }
   return cluster_ranks;
 }
 

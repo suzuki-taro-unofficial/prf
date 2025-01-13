@@ -1,4 +1,5 @@
 #include "prf/cluster.hpp"
+#include "logger.hpp"
 #include <cassert>
 
 namespace prf {
@@ -42,7 +43,9 @@ const ID ClusterManager::UNMANAGED_CLUSTER_ID = 0;
 
 // class Cluster
 void Cluster::close() {
-  assert(not this->closed && "既にクラスターは終了しています");
+  if (this->closed) {
+    failure_log("既にクラスターは終了しています");
+  }
   this->closed = true;
   clusterManager.exit_cluster();
 }
