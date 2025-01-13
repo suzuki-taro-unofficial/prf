@@ -349,8 +349,8 @@ Cell<T>::Cell(CellInternal<T> *internal)
 
 template <class T>
 Cell<T>::Cell(T initial_value)
-    : internal(
-          new CellInternal<T>(clusterManager.current_id(), initial_value)) {}
+    : internal(new CellInternal<T>(clusterManager.current_id(), initial_value)),
+      is_global_looper(false) {}
 
 template <class T> template <class F> void Cell<T>::listen(F f) const {
   this->internal->listenFromOuter([f](std::shared_ptr<T> v) -> void { f(*v); });
