@@ -1,4 +1,5 @@
 #include "prf/utils.hpp"
+#include <chrono>
 #include <mutex>
 
 namespace prf {
@@ -14,10 +15,13 @@ void Waiter::done() {
 }
 
 void Waiter::wait() {
-  std::unique_lock<std::mutex> lock(this->mtx);
-  this->cond.wait(lock, [&already_done = this->already_done]() -> bool {
-    return already_done.load();
-  });
+  while (not this->already_done.load()) {
+    std::unique_lock<std::mutex> lock(this->mtx);
+    this->cond.wait_for(lock, std::chrono::milliseconds(1),
+                        [&already_done = this->already_done]() -> bool {
+                          return already_done.load();
+                        });
+  }
 }
 
 bool Waiter::sample() {

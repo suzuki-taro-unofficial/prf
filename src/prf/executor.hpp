@@ -19,9 +19,7 @@ class InnerTransaction;
  * あるトランザクションの更新を開始するメッセージ
  */
 class TransactionExecuteMessage {
-  std::mutex mtx;
-  std::condition_variable cond;
-  std::atomic_bool already_done;
+  utils::Waiter waiter;
 
 public:
   /**

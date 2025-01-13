@@ -15,18 +15,11 @@
 namespace prf {
 TransactionExecuteMessage::TransactionExecuteMessage(
     InnerTransaction *transaction)
-    : transaction(transaction), already_done(false) {}
+    : transaction(transaction) {}
 
-void TransactionExecuteMessage::done() {
-  std::lock_guard<std::mutex> lock(mtx);
-  this->already_done.store(true);
-  cond.notify_all();
-}
+void TransactionExecuteMessage::done() { this->waiter.done(); }
 
-void TransactionExecuteMessage::wait() {
-  std::unique_lock<std::mutex> lock(mtx);
-  cond.wait(lock, [this] { return this->already_done.load(); });
-}
+void TransactionExecuteMessage::wait() { this->waiter.wait(); }
 
 void Executor::initialize(std::map<ID, std::string> cluster_names) {
   std::lock_guard<std::mutex> lock(executor_mutex);
