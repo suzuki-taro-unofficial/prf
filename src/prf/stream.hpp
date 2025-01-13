@@ -760,7 +760,7 @@ StreamInternal<T>::StreamInternal(ID cluster_id)
 
 template <class T> void StreamInternal<T>::send(T value) {
   if (current_transaction == nullptr) {
-    InnerTransaction trans;
+    Transaction trans;
     send(value, current_transaction);
   } else {
     send(value, current_transaction);

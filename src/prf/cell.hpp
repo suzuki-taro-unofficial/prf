@@ -248,7 +248,7 @@ CellInternal<T>::CellInternal(ID cluster_id, T initial_value)
 
 template <class T> void CellInternal<T>::send(T value) {
   if (current_transaction == nullptr) {
-    InnerTransaction trans;
+    Transaction trans;
     send(value, current_transaction);
   } else {
     send(value, current_transaction);
