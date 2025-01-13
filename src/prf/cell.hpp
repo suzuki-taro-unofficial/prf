@@ -322,13 +322,12 @@ template <class T> void CellInternal<T>::update(InnerTransaction *transaction) {
 
 template <class T> void CellInternal<T>::refresh(ID transaction_id) {
   std::lock_guard<std::mutex> lock(mtx);
-  if (values.find(transaction_id) == values.end()) {
-    failure_log("このトランザクションで新しく値が設定されていません");
-  }
-  // 指定されたTransactionより以前にある値を消去する
+  // 指定されたTransactionより以前にある値で、一番古いのを残して消す
   while (true) {
     auto itr = values.begin();
-    if (itr->first < transaction_id) {
+    auto itr2 = itr;
+    ++itr2;
+    if (itr2 != values.end() and itr2->first <= transaction_id) {
       values.erase(itr);
     } else {
       break;
@@ -413,9 +412,12 @@ template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
     T res = *c.internal->unsafeSample(id);
     current_transaction->register_before_update_hook(
         [internal, res](ID id) -> void {
-          std::lock_guard<std::mutex> lock(internal->mtx);
-          internal->values[id] = std::make_shared<T>(res);
+          {
+            std::lock_guard<std::mutex> lock(internal->mtx);
+            internal->values[id] = std::make_shared<T>(res);
+          }
         });
+    current_transaction->register_cleanup(internal);
     return std::nullopt;
   };
   this->internal->global_listen(c.internal);
