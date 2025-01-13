@@ -116,7 +116,7 @@ public:
 
   template <class U1, class F>
   Stream<typename std::invoke_result<F, T &, U1 &>::type> snapshot(Cell<U1> c1,
-                                                                   F f) {
+                                                                   F f) const {
     using V = typename std::invoke_result<F, T &, U1 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -142,7 +142,7 @@ public:
 
   template <class U1, class U2, class F>
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &>::type>
-  snapshot(Cell<U1> c1, Cell<U2> c2, F f) {
+  snapshot(Cell<U1> c1, Cell<U2> c2, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -175,7 +175,7 @@ public:
 
   template <class U1, class U2, class U3, class F>
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type>
-  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) {
+  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -215,7 +215,7 @@ public:
 
   template <class U1, class U2, class U3, class U4, class F>
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type>
-  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) {
+  snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &>::type;
     ID cluster_id = clusterManager.current_id();
     std::function<std::optional<V>(ID)> updater =
@@ -264,7 +264,7 @@ public:
   Stream<
       typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           F f) {
+           F f) const {
     using V =
         typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -321,7 +321,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                      U6 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, F f) {
+           Cell<U6> c6, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -386,7 +386,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                      U7 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, Cell<U7> c7, F f) {
+           Cell<U6> c6, Cell<U7> c7, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -458,7 +458,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                      U7 &, U8 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) {
+           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -537,7 +537,7 @@ public:
   Stream<typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &, U6 &,
                                      U7 &, U8 &, U9 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
-           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) {
+           Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &, U9 &>::type;
     ID cluster_id = clusterManager.current_id();
@@ -624,7 +624,7 @@ public:
                                      U7 &, U8 &, U9 &, U10 &>::type>
   snapshot(Cell<U1> c1, Cell<U2> c2, Cell<U3> c3, Cell<U4> c4, Cell<U5> c5,
            Cell<U6> c6, Cell<U7> c7, Cell<U8> c8, Cell<U9> c9, Cell<U10> c10,
-           F f) {
+           F f) const {
     using V = typename std::invoke_result<F, T &, U1 &, U2 &, U3 &, U4 &, U5 &,
                                           U6 &, U7 &, U8 &, U9 &, U10 &>::type;
     ID cluster_id = clusterManager.current_id();
