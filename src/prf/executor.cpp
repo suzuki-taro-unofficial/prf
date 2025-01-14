@@ -21,6 +21,8 @@ void TransactionExecuteMessage::done() { this->waiter.done(); }
 
 void TransactionExecuteMessage::wait() { this->waiter.wait(); }
 
+bool TransactionExecuteMessage::finished() { return this->waiter.sample(); }
+
 void Executor::initialize(std::map<ID, std::string> cluster_names) {
   std::lock_guard<std::mutex> lock(executor_mutex);
   if (global_executor == nullptr) {

@@ -207,4 +207,6 @@ JoinHandler Transaction::get_join_handler() {
   return JoinHandler(msg);
 }
 
+bool JoinHandler::finished() { return this->message->finished(); }
+
 } // namespace prf

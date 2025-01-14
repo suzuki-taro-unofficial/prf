@@ -56,6 +56,11 @@ public:
   ~JoinHandler();
 
   void join();
+
+  /**
+   * 更新処理が終了しているかをブロッキングせず返す
+   */
+  bool finished();
 };
 
 /**
