@@ -107,11 +107,17 @@ public:
   Cell<T> hold(T initial_value) const;
 
   template <class U> Stream<U> map_to(U x) const {
-    return this->map([x](const T &tmp) -> U { return x; });
+    return this->map([x](const T &tmp) -> U {
+      (void)tmp;
+      return x;
+    });
   }
 
   template <class U> Stream<U> snapshot(Cell<U> c) const {
-    return this->snapshot(c, [](const T &a, U b) -> U { return b; });
+    return this->snapshot(c, [](const T &a, U b) -> U {
+      (void)a;
+      return b;
+    });
   }
 
   template <class U1, class F>
@@ -755,6 +761,7 @@ StreamInternal<T>::StreamInternal(ID cluster_id)
           cluster_id, (std::function<std::optional<T>(ID transaction_id)>)[](
                           ID transaction_id)
                           ->std::optional<T> {
+                            (void)transaction_id;
                             failure_log("無効なupdaterが登録されています");
                           }) {}
 
@@ -863,7 +870,10 @@ Stream<T> Stream<T>::merge(Stream<T> s2, F f) const {
 }
 
 template <class T> Stream<T> Stream<T>::or_else(Stream<T> s2) const {
-  return this->merge(s2, [](T x, T y) -> T { return x; });
+  return this->merge(s2, [](T x, T y) -> T {
+    (void)y;
+    return x;
+  });
 }
 
 template <class T> Cell<T> Stream<T>::hold(T initial_value) const {
@@ -937,7 +947,6 @@ template <class T> void StreamLoop<T>::loop(Stream<T> s) {
   }
   this->looped = true;
 
-  ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater =
       [s](ID transaction_id) -> std::optional<T> {
     std::shared_ptr<T> res = s.internal->unsafeSample(transaction_id);

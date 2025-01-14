@@ -3,8 +3,6 @@
 #include "prf/thread_pool.hpp"
 #include "prf/transaction.hpp"
 #include "prf/types.hpp"
-#include <atomic>
-#include <condition_variable>
 #include <functional>
 #include <map>
 #include <mutex>

@@ -23,9 +23,10 @@ InnerTransaction::generate_sub_transaction(ID updating_cluster) {
 }
 
 InnerTransaction::InnerTransaction(ID id, ID updating_cluster)
-    : id(id), updating_cluster(updating_cluster), updating(false),
+    : id(id), updating_cluster(updating_cluster),
       inside_transaction(updating_cluster !=
-                         ClusterManager::UNMANAGED_CLUSTER_ID) {}
+                         ClusterManager::UNMANAGED_CLUSTER_ID),
+      updating(false) {}
 
 InnerTransaction::InnerTransaction() {
   // 既にトランザクションがある場合はそちらを使う

@@ -226,6 +226,7 @@ CellInternal<T>::CellInternal(
   // 初期値はEecutorの初期化処理に含める
   Executor::after_build_hooks.push_back(
       [this, initial_value](InnerTransaction *transaction) -> void {
+        (void)transaction;
         this->send(initial_value);
       });
 }
@@ -236,12 +237,14 @@ CellInternal<T>::CellInternal(ID cluster_id, T initial_value)
           cluster_id, (std::function<std::optional<T>(ID transaction_id)>)[](
                           ID transaction_id)
                           ->std::optional<T> {
+                            (void)transaction_id;
                             warn_log("無効なupdaterが登録されています");
                             return std::nullopt;
                           }) {
   // 初期値はEecutorの初期化処理に含める
   Executor::after_build_hooks.push_back(
       [this, initial_value](InnerTransaction *transaction) -> void {
+        (void)transaction;
         this->send(initial_value);
       });
 }
@@ -294,7 +297,6 @@ void CellInternal<T>::listenFromOuter(
 
 template <class T> void CellInternal<T>::update(InnerTransaction *transaction) {
   ID transaction_id = transaction->get_id();
-  this->updater;
   std::optional<T> res = this->updater(transaction_id);
   if (res) {
     this->send(*res, transaction);
@@ -351,7 +353,7 @@ template <class T>
 Cell<T>::Cell(ID cluster_id, bool is_looper)
     : internal(new CellInternal<T>(cluster_id,
                                    std::function<std::optional<T>(ID)>())),
-      is_global_looper(false) {}
+      is_global_looper(is_looper) {}
 
 template <class T>
 CellLoop<T>::CellLoop()
@@ -363,7 +365,6 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
   }
 
   this->looped = true;
-  ID cluster_id = clusterManager.current_id();
   std::function<std::optional<T>(ID)> updater =
       [c](ID transaction_id) -> std::optional<T> {
     return *c.internal->unsafeSample(transaction_id);
@@ -375,9 +376,7 @@ template <class T> void CellLoop<T>::loop(Cell<T> c) {
 
 template <class T>
 GlobalCellLoop<T>::GlobalCellLoop()
-    : Cell<T>(clusterManager.current_id(), false), looped(false) {
-  this->is_global_looper = true;
-}
+    : Cell<T>(clusterManager.current_id(), true), looped(false) {}
 
 template <class T> void GlobalCellLoop<T>::loop(Cell<T> c) {
   if (this->looped) {

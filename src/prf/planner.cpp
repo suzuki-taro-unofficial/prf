@@ -46,7 +46,7 @@ bool need_refresh_message(const PlannerMessage &message) {
 }
 
 TransactionState::TransactionState(ID transaction_id)
-    : transaction_id(transaction_id), initialized(false), now(), future(),
+    : transaction_id(transaction_id), initialized(false), future(), now(),
       target_ranks() {}
 
 void PlannerManager::handleStartMessage(
@@ -218,6 +218,7 @@ void simple_planner(std::vector<Rank> &cluster_ranks,
                     std::deque<TransactionState> &transaction_states,
                     ConcurrentQueue<ExecutorMessage> &executor_message_queue,
                     std::atomic_bool &stop) {
+  (void)stop;
   // シンプルな実行計画
   // 一番新しいトランザクションにクラスタを割り当てて終了
   if (transaction_states.empty()) {

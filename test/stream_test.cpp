@@ -96,9 +96,9 @@ void test_4() {
   std::string r4 = "";
 
   s1.listen([&r1](std::string x) { r1 += x; });
-  s1.listen([&r2](std::string x) { r2 += x; });
-  s1.listen([&r3](std::string x) { r3 += x; });
-  s1.listen([&r4](std::string x) { r4 += x; });
+  s2.listen([&r2](std::string x) { r2 += x; });
+  s3.listen([&r3](std::string x) { r3 += x; });
+  s4.listen([&r4](std::string x) { r4 += x; });
 
   prf::build();
 

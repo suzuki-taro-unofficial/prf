@@ -1,7 +1,7 @@
 #include "prf/union_find.hpp"
 
 namespace prf {
-UnionFind::UnionFind(u64 size) : size(size), parents(size) {
+UnionFind::UnionFind(u64 size) : parents(size), size(size) {
   for (u64 i = 0; i < size; ++i) {
     parents[i] = i;
   }
