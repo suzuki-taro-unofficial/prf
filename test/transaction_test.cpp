@@ -139,8 +139,36 @@ void test_3() {
   prf::use_parallel_execution = false;
 }
 
+void test_4() {
+  prf::StreamSink<int> s1;
+
+  int sum = 0;
+
+  s1.listen([&sum](int n) -> void { sum += n; });
+
+  prf::build();
+
+  s1.send(1);
+  assert(sum == 1 && "StreamSinkとlistenが動作している");
+
+  s1.send(2);
+  assert(sum == 3 && "StreamSinkとlistenが動作している");
+
+  s1.send(3);
+  assert(sum == 6 && "StreamSinkとlistenが動作している");
+
+  s1.send(10);
+
+  s1.send(10);
+
+  auto s2 = s1.filter([](int n) -> bool { return n % 2 == 0; });
+  auto s3 = s2.map([](int n) -> int {return n * n;});
+  auto s4 = s3.map([](int n) -> int { return n + 2; });
+}
+
 int main() {
   run_test(test_1);
   run_test(test_2);
   run_test(test_3);
+  run_test(test_4);
 }
