@@ -150,7 +150,8 @@ void Executor::start_loop() {
       ID transaction_id = ftmsg.transaction_id;
 
       if (this->transactions.count(transaction_id) == 0) {
-        warn_log("トランザクションがExecutorに登録されていません ID: %ld",
+        // 複数回終了命令が来る可能性があるので、ここで吸収する
+        info_log("トランザクションがExecutorに登録されていません ID: %ld",
                  transaction_id);
         continue;
       }

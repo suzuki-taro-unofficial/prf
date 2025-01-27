@@ -51,6 +51,7 @@ TransactionState::TransactionState(ID transaction_id)
 
 void PlannerManager::handleStartMessage(
     const StartTransactionMessage &message) {
+  info_log("トランザクションが登録されました %ld", message.transaction_id);
   // キューが空のときはそのまま追加する
   if (this->transaction_states.empty()) {
     TransactionState add(message.transaction_id);
@@ -150,7 +151,12 @@ void PlannerManager::handleFinishMessage(
              message.transaction_id);
     return;
   }
-  // トランザクションが初期化されているかを確認していないが、問題無いはず
+  if (not this->transaction_states.front().initialized) {
+    warn_log(
+        "初期化されていないトランザクションを終了しようとしています id: %ld",
+        id_arg);
+  }
+  info_log("トランザクションの終了が依頼されました id: %ld", id_arg);
   this->transaction_states.pop_front();
 }
 
