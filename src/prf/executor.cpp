@@ -181,6 +181,8 @@ void Executor::start_loop() {
       }
       continue;
     }
+    // 来ることは無いが、一応追加しておく
+    warn_log("メッセージが適切に処理されませんでした");
   }
   info_log("Executorの実行を停止します");
   this->thread_pool.stop();
