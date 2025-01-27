@@ -10,7 +10,7 @@
 #endif
 
 #ifdef SHOW_WARN_LOG
-#define warn_log(...) LOG_MACRO("INFO", __VA_ARGS__)
+#define warn_log(...) LOG_MACRO("WARN", __VA_ARGS__)
 #else
 #define warn_log(...)                                                          \
   do {                                                                         \
