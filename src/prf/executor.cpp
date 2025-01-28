@@ -17,6 +17,8 @@ TransactionExecuteMessage::TransactionExecuteMessage(
     InnerTransaction *transaction)
     : transaction(transaction) {}
 
+RegisterTransactionMessage::RegisterTransactionMessage(ID id_) : id(id_) {}
+
 void TransactionExecuteMessage::done() { this->waiter.done(); }
 
 void TransactionExecuteMessage::wait() { this->waiter.wait(); }
@@ -54,13 +56,7 @@ void Executor::start_loop() {
 
       info_log("新しいトランザクションが開始しました ID: %ld", transaction_id);
 
-      this->invoke_before_update_hooks(transaction_id);
       this->transactions[transaction_id] = temsg;
-
-      // Plannerにトランザクションの開始を通知
-      StartTransactionMessage stmsg;
-      stmsg.transaction_id = transaction_id;
-      PlannerManager::messages.push(stmsg);
 
       std::set<ID> clusters = temsg->transaction->target_clusters();
       UpdateTransactionMessage utmsg;
@@ -179,6 +175,23 @@ void Executor::start_loop() {
         ftmsg.transaction_id = transaction_id;
         PlannerManager::messages.push(ftmsg);
       }
+      continue;
+    }
+    if (std::holds_alternative<RegisterTransactionMessage>(msg)) {
+      RegisterTransactionMessage &rtmsg =
+          std::get<RegisterTransactionMessage>(msg);
+
+      ID transaction_id = rtmsg.id;
+
+      info_log("新しいトランザクションが登録されました ID: %ld", transaction_id);
+
+      this->invoke_before_update_hooks(transaction_id);
+
+      // Plannerにトランザクションの開始を通知
+      StartTransactionMessage stmsg;
+      stmsg.transaction_id = transaction_id;
+      PlannerManager::messages.push(stmsg);
+
       continue;
     }
     // 来ることは無いが、一応追加しておく

@@ -42,6 +42,12 @@ public:
   bool finished();
 };
 
+class RegisterTransactionMessage {
+public:
+  RegisterTransactionMessage(ID);
+  ID id;
+};
+
 /**
  * トランザクションにクラスタの更新を開始させるメッセージ
  */
@@ -73,7 +79,7 @@ public:
  */
 using ExecutorMessage =
     std::variant<TransactionExecuteMessage *, StartUpdateClusterMessage,
-                 FinalizeTransactionMessage>;
+                 FinalizeTransactionMessage, RegisterTransactionMessage>;
 
 /**
  *トランザクションの更新処理をするクラス

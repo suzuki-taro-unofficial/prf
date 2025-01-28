@@ -28,6 +28,8 @@ InnerTransaction::InnerTransaction(ID id, ID updating_cluster)
                          ClusterManager::UNMANAGED_CLUSTER_ID),
       updating(false) {}
 
+std::mutex InnerTransaction::new_transaction_mutex;
+
 InnerTransaction::InnerTransaction() {
   // 既にトランザクションがある場合はそちらを使う
   if (current_transaction != nullptr) {
@@ -39,11 +41,15 @@ InnerTransaction::InnerTransaction() {
     id = current_transaction->get_id();
     return;
   }
+  // Executor::messagesにトランザクションが生成された順番でRegisterTransactionMessageが来ることを想定しているのでロックを取る
+  std::lock_guard<std::mutex> lock(InnerTransaction::new_transaction_mutex);
   updating_cluster = ClusterManager::UNMANAGED_CLUSTER_ID;
   inside_transaction = false;
   updating = false;
   id = next_transaction_id.fetch_add(1);
   current_transaction = this;
+  RegisterTransactionMessage message(id);
+  Executor::messages.push(message);
 }
 
 InnerTransaction::~InnerTransaction() {

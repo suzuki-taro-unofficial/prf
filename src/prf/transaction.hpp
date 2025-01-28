@@ -127,6 +127,11 @@ private:
 
   InnerTransaction(ID id, ID updating_cluster);
 
+  /**
+   * 新しくトランザクションを作るときのロック
+   */
+  static std::mutex new_transaction_mutex;
+
 public:
   InnerTransaction();
 
