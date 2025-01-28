@@ -75,7 +75,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  prf::use_parallel_execution = true;
   prf::build();
 
   clock_t start = clock();
