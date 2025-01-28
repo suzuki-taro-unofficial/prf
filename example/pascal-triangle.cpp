@@ -2,6 +2,7 @@
 #include "prf/prf.hpp"
 #include "prf/thread.hpp"
 #include <cassert>
+#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <prf/stream.hpp>
@@ -11,11 +12,15 @@
 const size_t HEIGHT = 10;
 
 void heavy_calcurate() {
-  clock_t start = clock();
+  std::chrono::system_clock::time_point start =
+      std::chrono::system_clock::now();
   while (true) {
-    clock_t current = clock();
+    std::chrono::system_clock::time_point current =
+        std::chrono::system_clock::now();
     // 0.1秒経過するまでCPUを浪費させる
-    if ((current - start) * 1.0 / CLOCKS_PER_SEC > 0.1) {
+    auto dur =
+        std::chrono::duration_cast<std::chrono::milliseconds>(current - start);
+    if (dur.count() >= 100) {
       break;
     }
   }
@@ -25,7 +30,10 @@ int main(int argc, char **argv) {
   prf::StreamSink<int> root;
   std::vector<prf::Stream<int>> ss;
 
-  ss.push_back(root);
+  ss.push_back(root.map([](int n) -> int {
+    heavy_calcurate();
+    return n;
+  }));
 
   for (size_t i = 2; i <= HEIGHT; ++i) {
     std::vector<prf::Stream<int>> nexts;
@@ -67,6 +75,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  prf::use_parallel_execution = true;
   prf::build();
 
   clock_t start = clock();
